@@ -1,0 +1,83 @@
+﻿<UserControl x:Class="GradeVerification.View.Admin.User_Controls.Dashboard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:uc="clr-namespace:GradeVerification.View.Admin.User_Controls"
+             xmlns:local="clr-namespace:GradeVerification.View.Admin.User_Controls"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d" Name="AdminDashboard"
+             MinHeight="740" MinWidth="1030">
+    <Border CornerRadius="0 10 10 0">
+        <Border.Background>
+            <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                <GradientStop Color="#F8F9FA" Offset="0"/>
+                <GradientStop Color="#E9ECEF" Offset="1"/>
+            </LinearGradientBrush>
+        </Border.Background>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="200"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Top Menu -->
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0 0 30 20">
+                <Button Content="Today" Style="{StaticResource topMenuButton}" />
+                <Button Content="Week" Style="{StaticResource topMenuButton}" Background="#28A745" Foreground="#ffffff" />
+                <Button Content="Month" Style="{StaticResource topMenuButton}" />
+                <Button Content="Year" Style="{StaticResource topMenuButton}" />
+            </StackPanel>
+
+            <!-- Title -->
+            <TextBlock Text="Good Afternoon, Eran" FontSize="26" Foreground="#495057" HorizontalAlignment="Left" Margin="50 35 0 20"/>
+
+            <!-- Info Cards -->
+            <Grid Grid.Row="1" Margin="50 20 15 40">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <uc:InfoCard Grid.Column="0" Title="Students" Number="123,45" Icon="AccountStudent"
+                             Background1="#2ECC71" Background2="#58D68D" EllipseBackground1="#A9DFBF" EllipseBackground2="#D4EFDF" />
+
+                <uc:InfoCard Grid.Column="1" Title="Courses" Number="123,45" Icon="AccountStudent"
+                             Background1="#28A745" Background2="#52BE80" EllipseBackground1="#A3E4D7" EllipseBackground2="#D1F2EB" />
+
+                <uc:InfoCard Grid.Column="2" Title="Program" Number="123,45" Icon="AccountStudent"
+                             Background1="#239B56" Background2="#45B39D" EllipseBackground1="#A2D9CE" EllipseBackground2="#D0ECE7" />
+            </Grid>
+
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="300"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Chart Section -->
+                <Border CornerRadius="20" Padding="35 25" Background="#E9ECEF" Margin="50 0 10 40">
+
+                </Border>
+
+                <!-- Orders Section -->
+                <Border Grid.Column="1" CornerRadius="20" Padding="0 25" Background="#E9ECEF" Margin="15 0 47 40">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Orientation="Horizontal" Margin="20 0 0 15">
+
+                        </StackPanel>
+
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>

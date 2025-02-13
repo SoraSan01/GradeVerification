@@ -1,0 +1,105 @@
+﻿<Window x:Class="GradeVerification.View.Admin.AdminWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:uc="clr-namespace:GradeVerification.View.Admin.User_Controls"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GradeVerification.View.Admin"
+        mc:Ignorable="d" WindowStartupLocation="CenterScreen"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Title="AdminWindow" Height="640" Width="1280">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Left Menu -->
+        <Border CornerRadius="10 0 0 10">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                    <GradientStop Color="#FFFFFF" Offset="0"/>
+                    <!-- Pure White -->
+                    <GradientStop Color="#F5F5F5" Offset="1"/>
+                    <!-- Soft Light Gray -->
+                </LinearGradientBrush>
+            </Border.Background>
+
+            <StackPanel>
+                <!-- Username -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0 35 0 0">
+                    <Border CornerRadius="10" Width="40" Height="40" Background="#E0E0E0">
+                        <TextBlock Text="RE" Foreground="#424242" FontSize="22" FontWeight="SemiBold"
+                   TextAlignment="Center" VerticalAlignment="Center" Margin="3 0 0 2"/>
+                    </Border>
+
+                    <StackPanel Margin="10 0 0 0" VerticalAlignment="Center">
+                        <TextBlock Text="Eran, Reyven" FontSize="15" Margin="0 0 0 5" Foreground="#424242"/>
+                        <TextBlock Text="Admin" FontSize="11" Foreground="#616161"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <Separator Height="0.8" Margin="20 30" Background="#E0E0E0"/>
+
+                <!-- Menu Buttons -->
+                <Button Style="{StaticResource menuButtonActive}" Click="btn_dashboard">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="ViewDashboard" Style="{StaticResource menuButtonIcon}"/>
+                        <TextBlock Text="Dashboard" Style="{StaticResource menuButtonText}"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Style="{StaticResource menuButton}" Click="btn_students">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="AccountStudent" Style="{StaticResource menuButtonIcon}"/>
+                        <TextBlock Text="Students" Style="{StaticResource menuButtonText}"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Style="{StaticResource menuButton}" Click="btn_grades">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Grade" Style="{StaticResource menuButtonIcon}"/>
+                        <TextBlock Text="Grades" Style="{StaticResource menuButtonText}"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Style="{StaticResource menuButton}" Click="btn_subjects">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="TextSubject" Style="{StaticResource menuButtonIcon}"/>
+                        <TextBlock Text="Subjects" Style="{StaticResource menuButtonText}"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Style="{StaticResource menuButton}" Click="btn_programs">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Book" Style="{StaticResource menuButtonIcon}"/>
+                        <TextBlock Text="Programs" Style="{StaticResource menuButtonText}"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Style="{StaticResource menuButton}" Click="btn_users">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="User" Style="{StaticResource menuButtonIcon}"/>
+                        <TextBlock Text="Users" Style="{StaticResource menuButtonText}"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Style="{StaticResource menuButton}" Click="btn_logout">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Logout" Style="{StaticResource menuButtonIcon}"/>
+                        <TextBlock Text="Logout" Style="{StaticResource menuButtonText}"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Section -->
+        <ContentControl Grid.Column="1" x:Name="MainContentControl">
+            <Border CornerRadius="0 10 10 0" Background="#FAFAFA">
+                <!-- Light Grayish White Background -->
+                <!-- Your main content here -->
+            </Border>
+        </ContentControl>
+    </Grid>
+</Window>
