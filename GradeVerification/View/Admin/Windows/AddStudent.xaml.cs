@@ -39,5 +39,15 @@ namespace GradeVerification.View.Admin.Windows
                 this.WindowState = WindowState.Normal;
             }
         }
+
+        private void btn_Minimize(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void btn_Close(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }

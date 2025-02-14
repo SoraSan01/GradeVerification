@@ -1,4 +1,7 @@
-﻿using System;
+﻿using GradeVerification.Data;
+using GradeVerification.ViewModel;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,9 +23,12 @@ namespace GradeVerification.View.Admin.User_Controls
     /// </summary>
     public partial class StudentDashboard : UserControl
     {
-        public StudentDashboard()
+        ApplicationDbContext _dbContext;
+        public StudentDashboard(ApplicationDbContext dbContext)
         {
             InitializeComponent();
+            _dbContext = dbContext;
+            DataContext = new StudentDashboardViewModel();
         }
     }
 }

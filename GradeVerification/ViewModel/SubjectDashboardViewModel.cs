@@ -3,8 +3,10 @@ using GradeVerification.Data;
 using GradeVerification.Model;
 using GradeVerification.View.Admin.Windows;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
@@ -28,9 +30,7 @@ namespace GradeVerification.ViewModel
             YearOptions = new ObservableCollection<string> { "First Year", "Second Year", "Third Year", "Fourth Year" };
             SemesterOptions = new ObservableCollection<string> { "First Semester", "Second Semester" };
 
-            Subjects = new ObservableCollection<Subject>(_context.Subjects
-                            .Include(s => s.AcademicProgram)  // Ensure Program is loaded
-                            .ToList());
+            LoadSubjectAsync();
 
             AddSubjectCommand = new RelayCommand(AddSubject);
             EditSubjectCommand = new RelayCommand(EditSubject, CanModifySubject);
@@ -40,7 +40,11 @@ namespace GradeVerification.ViewModel
         public ObservableCollection<Subject> Subjects
         {
             get => _subjects;
-            set { _subjects = value; OnPropertyChanged(); }
+            set
+            {
+                _subjects = value;
+                OnPropertyChanged(); // Notify the UI
+            }
         }
 
         public ObservableCollection<string> YearOptions { get; }
@@ -83,30 +87,55 @@ namespace GradeVerification.ViewModel
         public ICommand EditSubjectCommand { get; }
         public ICommand DeleteSubjectCommand { get; }
 
-        private void AddSubject(object parameter)
+        private async void LoadSubjectAsync()
         {
             try
             {
                 using (var context = new ApplicationDbContext())
                 {
-                    var addSubjectWindow = new AddSubject(context);
-                    addSubjectWindow.Show();
-                    RefreshSubjects();
+                    var subjectList = await context.Subjects
+                                                   .Include(s => s.AcademicProgram)
+                                                   .ToListAsync();
+
+                    Subjects = new ObservableCollection<Subject>(subjectList);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error loading programs: " + ex.Message);
+                Debug.WriteLine("Error loading subjects: " + ex.Message);
+            }
+        }
+
+
+        private void AddSubject(object parameter)
+        {
+            try
+            {
+                var addSubjectWindow = new AddSubject
+                {
+                    DataContext = new AddSubjectViewModel(_context)
+                };
+
+                if (addSubjectWindow.ShowDialog() == true)
+                {
+                     LoadSubjectAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error adding Subject: {ex.Message}");
             }
         }
 
         private void EditSubject(object parameter)
         {
-            if (parameter is Subject subject)
+            if (parameter is Subject selectedSubject)
             {
-                var editSubjectWindow = new EditSubject();
-                editSubjectWindow.ShowDialog();
-                RefreshSubjects();
+                var editWindow = new EditSubject(selectedSubject);
+                var viewModel = new EditSubjectViewModel(selectedSubject, LoadSubjectAsync, editWindow);
+                editWindow.DataContext = viewModel;
+                editWindow.ShowDialog();
+
             }
         }
 
@@ -116,7 +145,7 @@ namespace GradeVerification.ViewModel
             {
                 _context.Subjects.Remove(subject);
                 _context.SaveChanges();
-                RefreshSubjects();
+                LoadSubjectAsync();
             }
         }
 
@@ -124,27 +153,20 @@ namespace GradeVerification.ViewModel
 
         private void FilterSubjects()
         {
-            var filteredSubjects = _context.Subjects.AsQueryable();
+            var query = _context.Subjects
+                .Include(s => s.AcademicProgram)
+                .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(SearchText))
-                filteredSubjects = filteredSubjects.Where(s => s.SubjectName.Contains(SearchText) || s.SubjectCode.Contains(SearchText));
+                query = query.Where(s => s.SubjectName.Contains(SearchText) || s.SubjectCode.Contains(SearchText));
 
             if (!string.IsNullOrWhiteSpace(SelectedYear))
-                filteredSubjects = filteredSubjects.Where(s => s.Year == SelectedYear);
+                query = query.Where(s => s.Year == SelectedYear);
 
             if (!string.IsNullOrWhiteSpace(SelectedSemester))
-                filteredSubjects = filteredSubjects.Where(s => s.Semester == SelectedSemester);
+                query = query.Where(s => s.Semester == SelectedSemester);
 
-            Subjects = new ObservableCollection<Subject>(_context.Subjects
-                .Include(s => s.AcademicProgram)  // Ensure Program is loaded
-                .ToList());
-        }
-
-        private void RefreshSubjects()
-        {
-            Subjects = new ObservableCollection<Subject>(_context.Subjects
-                .Include(s => s.AcademicProgram)  // Ensure Program is loaded
-                .ToList());
+            Subjects = new ObservableCollection<Subject>(query.ToList());
         }
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)

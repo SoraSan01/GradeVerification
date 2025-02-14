@@ -40,7 +40,7 @@ namespace GradeVerification.View.Admin
 
         private void btn_students(object sender, RoutedEventArgs e)
         {
-            MainContentControl.Content = new StudentDashboard();
+            MainContentControl.Content = new StudentDashboard(_dbContext);
         }
 
         private void btn_dashboard(object sender, RoutedEventArgs e)
@@ -50,7 +50,7 @@ namespace GradeVerification.View.Admin
 
         private void btn_grades(object sender, RoutedEventArgs e)
         {
-
+            MainContentControl.Content = new GradeDashboard(_dbContext);
         }
 
         private void btn_subjects(object sender, RoutedEventArgs e)

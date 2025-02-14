@@ -27,7 +27,7 @@ namespace GradeVerification.ViewModel
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public AddSubjectViewModel()
+        public AddSubjectViewModel(ApplicationDbContext dbContext)
         {
             YearList = new ObservableCollection<string> { "First Year", "Second Year", "Third Year", "Fourth Year" };
             SemesterList = new ObservableCollection<string> { "First Semester", "Second Semester" };

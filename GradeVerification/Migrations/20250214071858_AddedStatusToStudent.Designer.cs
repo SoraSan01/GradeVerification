@@ -3,6 +3,7 @@ using GradeVerification.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GradeVerification.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250214071858_AddedStatusToStudent")]
+    partial class AddedStatusToStudent
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -37,32 +40,6 @@ namespace GradeVerification.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("AcademicPrograms");
-                });
-
-            modelBuilder.Entity("GradeVerification.Model.Grade", b =>
-                {
-                    b.Property<string>("GradeId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Score")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("StudentId")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("SubjectId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("GradeId");
-
-                    b.HasIndex("StudentId");
-
-                    b.HasIndex("SubjectId");
-
-                    b.ToTable("Grade");
                 });
 
             modelBuilder.Entity("GradeVerification.Model.Student", b =>
@@ -100,8 +77,7 @@ namespace GradeVerification.Migrations
 
                     b.Property<string>("StudentId")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Year")
                         .IsRequired()
@@ -185,25 +161,6 @@ namespace GradeVerification.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("GradeVerification.Model.Grade", b =>
-                {
-                    b.HasOne("GradeVerification.Model.Student", "Student")
-                        .WithMany("Grades")
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GradeVerification.Model.Subject", "Subject")
-                        .WithMany("Grades")
-                        .HasForeignKey("SubjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Student");
-
-                    b.Navigation("Subject");
-                });
-
             modelBuilder.Entity("GradeVerification.Model.Student", b =>
                 {
                     b.HasOne("GradeVerification.Model.AcademicProgram", "AcademicProgram")
@@ -229,16 +186,6 @@ namespace GradeVerification.Migrations
             modelBuilder.Entity("GradeVerification.Model.AcademicProgram", b =>
                 {
                     b.Navigation("Subjects");
-                });
-
-            modelBuilder.Entity("GradeVerification.Model.Student", b =>
-                {
-                    b.Navigation("Grades");
-                });
-
-            modelBuilder.Entity("GradeVerification.Model.Subject", b =>
-                {
-                    b.Navigation("Grades");
                 });
 #pragma warning restore 612, 618
         }

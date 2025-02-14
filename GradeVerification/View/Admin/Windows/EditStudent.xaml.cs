@@ -1,6 +1,4 @@
-﻿using GradeVerification.Data;
-using GradeVerification.ViewModel;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,11 +15,11 @@ using System.Windows.Shapes;
 namespace GradeVerification.View.Admin.Windows
 {
     /// <summary>
-    /// Interaction logic for AddSubject.xaml
+    /// Interaction logic for EditStudent.xaml
     /// </summary>
-    public partial class AddSubject : Window
+    public partial class EditStudent : Window
     {
-        public AddSubject()
+        public EditStudent()
         {
             InitializeComponent();
         }

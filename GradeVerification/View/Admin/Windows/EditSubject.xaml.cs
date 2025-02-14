@@ -1,4 +1,6 @@
-﻿using System;
+﻿using GradeVerification.Model;
+using GradeVerification.ViewModel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,9 +21,27 @@ namespace GradeVerification.View.Admin.Windows
     /// </summary>
     public partial class EditSubject : Window
     {
-        public EditSubject()
+        public EditSubject(Subject subject)
         {
             InitializeComponent();
+        }
+
+        private void Border_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                this.DragMove(); // Allows window dragging when the border is clicked
+            }
+        }
+
+        private void btn_Close(object sender, RoutedEventArgs e)
+        {
+            this.Close(); // Closes the window
+        }
+
+        private void btn_Minimize(object sender, RoutedEventArgs e)
+        {
+            this.WindowState = WindowState.Minimized; // Minimizes the window
         }
     }
 }

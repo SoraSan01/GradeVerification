@@ -12,33 +12,22 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace GradeVerification.View.Admin.Windows
+namespace GradeVerification.View.Admin.User_Controls
 {
     /// <summary>
-    /// Interaction logic for AddSubject.xaml
+    /// Interaction logic for GradeDashboard.xaml
     /// </summary>
-    public partial class AddSubject : Window
+    public partial class GradeDashboard : UserControl
     {
-        public AddSubject()
+        private readonly ApplicationDbContext _dbContext;
+        public GradeDashboard(ApplicationDbContext dbContext)
         {
             InitializeComponent();
-        }
-
-        private void Border_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-
-        }
-
-        private void btn_Minimize(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void btn_Close(object sender, RoutedEventArgs e)
-        {
-
+            _dbContext = dbContext;
+            DataContext = new GradeDashboardViewModel();
         }
     }
 }

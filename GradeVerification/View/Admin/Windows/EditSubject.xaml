@@ -113,7 +113,7 @@
                             <StackPanel Grid.Row="6" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="20">
                                 <Button Content="Cancel" Width="100" Style="{StaticResource secondaryButton}" Command="{Binding CancelCommand}"/>
                                 <Button Content="Save Changes" Width="150" Margin="10 0 0 0" Style="{StaticResource mainButton}"
-                                        Command="{Binding UpdateSubjectCommand}"/>
+                                        Command="{Binding SaveCommand}"/>
                             </StackPanel>
                         </Grid>
                     </Border>

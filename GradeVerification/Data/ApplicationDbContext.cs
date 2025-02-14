@@ -13,6 +13,9 @@ namespace GradeVerification.Data
         public DbSet<User> Users { get; set; }
         public DbSet<AcademicProgram> AcademicPrograms { get; set; }
         public DbSet<Subject> Subjects { get; set; }
+        public DbSet<Student> Students { get; set; }
+        public DbSet<Grade> Grade { get; set; }
+
 
         public ApplicationDbContext() { }
 
@@ -36,6 +39,17 @@ namespace GradeVerification.Data
                 .WithMany(p => p.Subjects)
                 .HasForeignKey(s => s.ProgramId)
                 .OnDelete(DeleteBehavior.Cascade); // Cascade delete if needed
+
+            // Configure relationships
+            modelBuilder.Entity<Grade>()
+                .HasOne(g => g.Student)
+                .WithMany(s => s.Grades)
+                .HasForeignKey(g => g.StudentId);
+
+            modelBuilder.Entity<Grade>()
+                .HasOne(g => g.Subject)
+                .WithMany(s => s.Grades)
+                .HasForeignKey(g => g.SubjectId);
         }
     }
 
