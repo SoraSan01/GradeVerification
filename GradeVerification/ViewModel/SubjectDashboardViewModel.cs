@@ -94,14 +94,10 @@ namespace GradeVerification.ViewModel
         {
             try
             {
-                using (var context = new ApplicationDbContext())
-                {
-                    var subjectList = await context.Subjects
-                                                   .Include(s => s.AcademicProgram)
-                                                   .ToListAsync();
+                var subjectList = await _context.Subjects
+                                                .ToListAsync();
 
-                    Subjects = new ObservableCollection<Subject>(subjectList);
-                }
+                Subjects = new ObservableCollection<Subject>(subjectList);
             }
             catch (Exception ex)
             {

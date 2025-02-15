@@ -2,38 +2,57 @@
 using GradeVerification.Model;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace GradeVerification.Service
 {
     public class SubjectService
     {
+        private readonly ApplicationDbContext _context;
+        public SubjectService(ApplicationDbContext context)
+        {
+            _context = context;
+        }
         public async Task<bool> SaveSubjectsAsync(ObservableCollection<Subject> subjects)
         {
             try
             {
-                // Database insert logic here, for example:
                 using (var dbContext = new ApplicationDbContext())
                 {
-                    foreach (var subject in subjects)
+                    // Fetch existing subjects to prevent duplicates
+                    var existingSubjectCodes = await dbContext.Subjects
+                        .Select(s => s.SubjectCode)
+                        .ToListAsync(); // List<string>
+
+                    // Filter out subjects that already exist in the database
+                    var newSubjects = subjects
+                        .Where(s => !existingSubjectCodes.Contains(s.SubjectCode))
+                        .ToList(); // Convert to List<Subject>
+
+                    if (newSubjects.Any())
                     {
-                        dbContext.Subjects.Add(subject);
+                        await dbContext.Subjects.AddRangeAsync(newSubjects);
+                        await dbContext.SaveChangesAsync();
                     }
-                    await dbContext.SaveChangesAsync();
                     return true;
                 }
             }
             catch (Exception ex)
             {
-                // Log the exception or display an error message
                 Console.WriteLine($"Error saving subjects: {ex.Message}");
                 return false;
             }
         }
 
+        public async Task<List<Subject>> GetSubjectsByProgramAsync(string programId, string year, string semester)
+        {
+            return await _context.Subjects
+                .Where(s => s.ProgramId == programId &&
+                           s.Year == year &&
+                           s.Semester == semester)
+                .ToListAsync();
+        }
     }
 }

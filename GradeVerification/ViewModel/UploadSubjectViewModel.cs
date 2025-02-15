@@ -12,6 +12,9 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using GradeVerification.Service;
 using GradeVerification.View.Admin.Windows;
+using System.Text.RegularExpressions;
+using System.Globalization;
+using GradeVerification.Data;
 
 namespace GradeVerification.ViewModel
 {
@@ -20,6 +23,7 @@ namespace GradeVerification.ViewModel
         private string _filePath;
         private readonly SubjectService _subjectService;
         private readonly AcademicProgramService _academicProgramService;
+        private readonly ApplicationDbContext _dbContext;
         private bool _canSave;
 
         public string FilePath
@@ -51,7 +55,7 @@ namespace GradeVerification.ViewModel
         public UploadSubjectViewModel()
         {
             Subjects = new ObservableCollection<Subject>();
-            _subjectService = new SubjectService();
+            _subjectService = new SubjectService(_dbContext);
             _academicProgramService = new AcademicProgramService();
 
             BrowseCommand = new RelayCommand(BrowseFile);
@@ -86,14 +90,11 @@ namespace GradeVerification.ViewModel
             {
                 using (var package = new ExcelPackage(new FileInfo(FilePath)))
                 {
-                    // Clear existing subjects to avoid duplication
                     Subjects.Clear();
 
-                    // Iterate through each worksheet in the Excel file
                     foreach (var worksheet in package.Workbook.Worksheets)
                     {
-                        // Extract the program name from the sheet name or a specific cell
-                        string programName = worksheet.Name; // Assuming the sheet name is the program name
+                        string programName = worksheet.Name;
                         var programId = await _academicProgramService.GetProgramIdByNameAsync(programName);
 
                         if (programId == null)
@@ -102,124 +103,137 @@ namespace GradeVerification.ViewModel
                             continue;
                         }
 
-                        // Iterate through the rows to find the year and semester
                         int rowCount = worksheet.Dimension.Rows;
                         string currentYear = "";
-                        string currentSemester = "";
 
-                        bool isFirstSemester = true; // Flag to track first semester
                         for (int row = 1; row <= rowCount; row++)
                         {
-                            var cellValue = worksheet.Cells[row, 1].Text?.Trim();
+                            var cellA = worksheet.Cells[row, 1].Text?.Trim();
 
-                            // Identify Year Level
-                            if (!string.IsNullOrWhiteSpace(cellValue) &&
-                                (cellValue.Contains("First Year", StringComparison.OrdinalIgnoreCase) ||
-                                 cellValue.Contains("Second Year", StringComparison.OrdinalIgnoreCase) ||
-                                 cellValue.Contains("Third Year", StringComparison.OrdinalIgnoreCase) ||
-                                 cellValue.Contains("Fourth Year", StringComparison.OrdinalIgnoreCase)))
+                            // Detect Year (e.g., "First Year")
+                            if (IsYearHeader(cellA))
                             {
-                                currentYear = cellValue.Trim();
+                                currentYear = FormatYear(cellA); // Format the year to title case
                                 continue;
                             }
 
-                            // Identify Semester
-                            if (!string.IsNullOrWhiteSpace(cellValue) &&
-                                cellValue.Contains("First Semester", StringComparison.OrdinalIgnoreCase))
+                            // Check for semester headers (First Semester and Second Semester in the same row)
+                            var cellE = worksheet.Cells[row, 5].Text?.Trim();
+                            if (cellA?.Equals("First Semester", StringComparison.OrdinalIgnoreCase) == true &&
+                                cellE?.Equals("Second Semester", StringComparison.OrdinalIgnoreCase) == true)
                             {
-                                currentSemester = cellValue.Trim();
-                                continue;
-                            }
+                                // Skip the column headers row (next row)
+                                row++;
+                                if (row > rowCount) break;
 
-                            // Process Data for Columns (1, 2, 4)
-                            if (!string.IsNullOrWhiteSpace(currentYear) && !string.IsNullOrWhiteSpace(currentSemester))
-                            {
-                                var courseCode1 = worksheet.Cells[row, 1].Text?.Trim();
-                                var descriptiveTitle1 = worksheet.Cells[row, 2].Text?.Trim();
-                                var unitsText1 = worksheet.Cells[row, 4].Text?.Trim();
-
-                                if (!string.IsNullOrWhiteSpace(courseCode1) &&
-                                    !string.IsNullOrWhiteSpace(descriptiveTitle1) &&
-                                    !courseCode1.Contains("Course Code") &&
-                                    !descriptiveTitle1.Contains("Descriptive Title"))
+                                // Process course rows
+                                for (row++; row <= rowCount; row++)
                                 {
-                                    int.TryParse(unitsText1, out int units1);
-                                    var subject = new Subject
+                                    // Check if new section starts
+                                    var nextCellA = worksheet.Cells[row, 1].Text?.Trim();
+                                    if (IsYearHeader(nextCellA) || IsSemesterHeader(nextCellA, worksheet.Cells[row, 5].Text?.Trim()))
                                     {
-                                        SubjectCode = courseCode1,
-                                        SubjectName = descriptiveTitle1,
-                                        Units = units1,
-                                        Year = currentYear,
-                                        Semester = currentSemester,
-                                        ProgramId = programId // Set the ProgramId from the database
-                                    };
+                                        row--; // Adjust to reprocess this row in outer loop
+                                        break;
+                                    }
 
-                                    Subjects.Add(subject);
+                                    // Process First Semester (Columns A, B, D)
+                                    var code1 = worksheet.Cells[row, 1].Text?.Trim();
+                                    var title1 = worksheet.Cells[row, 2].Text?.Trim();
+                                    var units1Text = worksheet.Cells[row, 4].Text?.Trim();
+
+                                    if (!string.IsNullOrEmpty(code1) && !string.IsNullOrEmpty(title1))
+                                    {
+                                        if (TryParseUnits(units1Text, out int units1))
+                                        {
+                                            Application.Current.Dispatcher.Invoke(() => Subjects.Add(new Subject
+                                            {
+                                                SubjectCode = code1,
+                                                SubjectName = title1,
+                                                Units = units1,
+                                                Year = currentYear,
+                                                Semester = "First Semester",
+                                                ProgramId = programId
+                                            }));
+                                        }
+                                    }
+
+                                    // Process Second Semester (Columns E, F, G)
+                                    var code2 = worksheet.Cells[row, 5].Text?.Trim();
+                                    var title2 = worksheet.Cells[row, 6].Text?.Trim();
+                                    var units2Text = worksheet.Cells[row, 7].Text?.Trim();
+
+                                    if (!string.IsNullOrEmpty(code2) && !string.IsNullOrEmpty(title2))
+                                    {
+                                        if (TryParseUnits(units2Text, out int units2))
+                                        {
+                                            Application.Current.Dispatcher.Invoke(() => Subjects.Add(new Subject
+                                            {
+                                                SubjectCode = code2,
+                                                SubjectName = title2,
+                                                Units = units2,
+                                                Year = currentYear,
+                                                Semester = "Second Semester",
+                                                ProgramId = programId
+                                            }));
+                                        }
+                                    }
                                 }
                             }
                         }
-
-                        // Second Loop: Process Columns (5, 6, 7)
-                        for (int row = 1; row <= rowCount; row++)
-                        {
-                            var cellValue = worksheet.Cells[row, 1].Text?.Trim();
-
-                            // Identify Year Level
-                            if (!string.IsNullOrWhiteSpace(cellValue) &&
-                                (cellValue.Contains("First Year", StringComparison.OrdinalIgnoreCase) ||
-                                 cellValue.Contains("Second Year", StringComparison.OrdinalIgnoreCase) ||
-                                 cellValue.Contains("Third Year", StringComparison.OrdinalIgnoreCase) ||
-                                 cellValue.Contains("Fourth Year", StringComparison.OrdinalIgnoreCase)))
-                            {
-                                currentYear = cellValue.Trim();
-                                continue;
-                            }
-
-                            // Process Data for Columns (5, 6, 7)
-                            if (!string.IsNullOrWhiteSpace(currentYear) && !string.IsNullOrWhiteSpace(currentSemester))
-                            {
-                                var courseCode2 = worksheet.Cells[row, 5].Text?.Trim();
-                                var descriptiveTitle2 = worksheet.Cells[row, 6].Text?.Trim();
-                                var unitsText2 = worksheet.Cells[row, 7].Text?.Trim();
-
-                                if (!string.IsNullOrWhiteSpace(courseCode2) &&
-                                    !string.IsNullOrWhiteSpace(descriptiveTitle2) &&
-                                    !courseCode2.Contains("Course Code") &&
-                                    !descriptiveTitle2.Contains("Descriptive Title"))
-                                {
-                                    int.TryParse(unitsText2, out int units2);
-                                    var subject = new Subject
-                                    {
-                                        SubjectCode = courseCode2,
-                                        SubjectName = descriptiveTitle2,
-                                        Units = units2,
-                                        Year = currentYear,
-                                        Semester = "Second Semester", // Always assign to Second Semester
-                                        ProgramId = programId // Set the ProgramId from the database
-                                    };
-
-                                    Subjects.Add(subject);
-                                }
-                            }
-                        }
-
-                        // After processing each sheet, check if Save can be enabled
-                        CanSave = Subjects.Count > 0;
-
-                        // Notify UI update
-                        OnPropertyChanged(nameof(Subjects));
                     }
+
+                    CanSave = Subjects.Count > 0;
+                    OnPropertyChanged(nameof(Subjects));
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error: {ex.Message}");
+                MessageBox.Show($"Error loading Excel data: {ex.Message}");
             }
+        }
+
+        // Helper method to format the year string to title case
+        private string FormatYear(string year)
+        {
+            if (string.IsNullOrWhiteSpace(year)) return year;
+
+            // Capitalize the first letter of each word
+            return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(year.ToLower());
+        }
+
+        private bool IsYearHeader(string cellText)
+        {
+            if (string.IsNullOrWhiteSpace(cellText))
+                return false;
+
+            // Normalize spacing and check for year patterns
+            string normalized = Regex.Replace(cellText.Trim(), @"\s+", " ");
+            return normalized.Equals("First Year", StringComparison.OrdinalIgnoreCase) ||
+                   normalized.Equals("Second Year", StringComparison.OrdinalIgnoreCase) ||
+                   normalized.Equals("Third Year", StringComparison.OrdinalIgnoreCase) ||
+                   normalized.Equals("Fourth Year", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private bool IsSemesterHeader(string cellA, string cellE)
+        {
+            return cellA?.Contains("Semester", StringComparison.OrdinalIgnoreCase) == true ||
+                   cellE?.Contains("Semester", StringComparison.OrdinalIgnoreCase) == true;
+        }
+
+        private bool TryParseUnits(string unitsText, out int units)
+        {
+            units = 0;
+            if (string.IsNullOrWhiteSpace(unitsText)) return false;
+
+            // Remove non-numeric characters (e.g., parentheses)
+            string cleaned = new string(unitsText.Where(c => char.IsDigit(c)).ToArray());
+            return int.TryParse(cleaned, out units);
         }
 
         private async Task SaveSubjectsAsync()
         {
-            if (!Subjects.Any())
+            if (Subjects == null || !Subjects.Any())
             {
                 MessageBox.Show("No subjects to save.");
                 return;
@@ -227,30 +241,33 @@ namespace GradeVerification.ViewModel
 
             try
             {
-                foreach (var subject in Subjects)
-                {
-                    // Log or check subject values
-                    Console.WriteLine($"Saving subject: {subject.SubjectCode} - {subject.SubjectName}");
-                }
+                // Ensure no duplicate subjects before saving
+                var distinctSubjects = Subjects
+                    .GroupBy(s => new { s.SubjectCode, s.Semester, s.Year, s.ProgramId })
+                    .Select(g => g.First())
+                    .ToList();
 
-                var success = await _subjectService.SaveSubjectsAsync(Subjects);
-                if (success)
+                // Convert List to ObservableCollection before passing it
+                var observableSubjects = new ObservableCollection<Subject>(distinctSubjects);
+
+                await _subjectService.SaveSubjectsAsync(observableSubjects);
+
+                MessageBox.Show("Subjects successfully saved.");
+
+                // Refresh UI: Clear and reset `Subjects`
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    MessageBox.Show("Subjects successfully saved.");
-                    Subjects.Clear();  // Clear after saving
-                    CanSave = false;    // Disable save button
-                }
-                else
-                {
-                    MessageBox.Show("An error occurred while saving subjects.");
-                }
+                    Subjects = new ObservableCollection<Subject>(); // Reassign collection
+                    OnPropertyChanged(nameof(Subjects)); // Notify UI to update
+                });
+
+                CanSave = false;
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error: {ex.Message}");
+                MessageBox.Show($"Error saving subjects: {ex.Message}");
             }
         }
-
 
         private void CloseWindow(object parameter)
         {

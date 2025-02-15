@@ -19,7 +19,7 @@ namespace GradeVerification.ViewModel
         private readonly AcademicProgramService _programService;
         private readonly ApplicationDbContext _context;
 
-        private string _studentId;
+        private string _schoolId;
         private string _firstName;
         private string _lastName;
         private string _email;
@@ -28,10 +28,10 @@ namespace GradeVerification.ViewModel
         private string _programId;
         private string _status;
 
-        public string StudentId
+        public string SchoolId
         {
-            get => _studentId;
-            set { _studentId = value; OnPropertyChanged(); }
+            get => _schoolId;
+            set { _schoolId = value; OnPropertyChanged(); }
         }
 
         public string FirstName
@@ -114,19 +114,30 @@ namespace GradeVerification.ViewModel
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(StudentId) || string.IsNullOrWhiteSpace(FirstName) ||
-                    string.IsNullOrWhiteSpace(LastName) || string.IsNullOrWhiteSpace(Email) ||
-                    string.IsNullOrWhiteSpace(Semester) || string.IsNullOrWhiteSpace(Year) ||
-                    string.IsNullOrWhiteSpace(ProgramId) || string.IsNullOrWhiteSpace(Status))
+                // Validate input fields
+                if (string.IsNullOrWhiteSpace(FirstName) ||
+                    string.IsNullOrWhiteSpace(LastName) ||
+                    string.IsNullOrWhiteSpace(Email) ||
+                    string.IsNullOrWhiteSpace(Semester) ||
+                    string.IsNullOrWhiteSpace(Year) ||
+                    string.IsNullOrWhiteSpace(ProgramId) ||
+                    string.IsNullOrWhiteSpace(Status))
                 {
                     MessageBox.Show("Please fill in all fields.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Check for duplicate email
+                if (_context.Students.Any(s => s.Email == Email))
+                {
+                    MessageBox.Show("A student with this email already exists.", "Duplicate Entry", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
                 // Create new student
                 var newStudent = new Student
                 {
-                    SchoolId = StudentId, // Ensure this matches the foreign key in Grade
+                    SchoolId = SchoolId,
                     FirstName = FirstName,
                     LastName = LastName,
                     Email = Email,
@@ -139,26 +150,29 @@ namespace GradeVerification.ViewModel
                 _context.Students.Add(newStudent);
                 await _context.SaveChangesAsync();
 
-                // Enroll the student in subjects
-                var subjectsToEnroll = _context.Subjects
-                    .Where(s => s.ProgramId == ProgramId && s.Year == Year && s.Semester == Semester)
-                    .ToList();
-
-                foreach (var subject in subjectsToEnroll)
+                // Enroll scholar students in subjects
+                if (Status.Equals("Scholar", StringComparison.OrdinalIgnoreCase))
                 {
-                    var newGrade = new Grade
-                    {
-                        StudentId = newStudent.Id,
-                        SubjectId = subject.SubjectId,
-                        Score = null // Initially null until graded
-                    };
+                    var subjectsToEnroll = _context.Subjects
+                        .Where(s => s.ProgramId == ProgramId && s.Year == Year && s.Semester == Semester)
+                        .ToList();
 
-                    _context.Grade.Add(newGrade);
+                    foreach (var subject in subjectsToEnroll)
+                    {
+                        var newGrade = new Grade
+                        {
+                            StudentId = newStudent.Id, // Use the auto-generated Id
+                            SubjectId = subject.SubjectId,
+                            Score = null // Initially null until graded
+                        };
+
+                        _context.Grade.Add(newGrade);
+                    }
+
+                    await _context.SaveChangesAsync();
                 }
 
-                await _context.SaveChangesAsync();
-
-                MessageBox.Show("Student saved and enrolled in subjects successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Student saved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 ClearForm();
                 LoadPrograms(); // Refresh UI
@@ -167,11 +181,14 @@ namespace GradeVerification.ViewModel
             {
                 MessageBox.Show($"Error: {ex.InnerException?.Message ?? ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+            finally
+            {
+                _context.Dispose(); // Dispose the context to release resources
+            }
         }
 
         private void ClearForm()
         {
-            StudentId = string.Empty;
             FirstName = string.Empty;
             LastName = string.Empty;
             Email = string.Empty;

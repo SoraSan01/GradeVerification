@@ -7,7 +7,6 @@ using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
-using System.Reflection.Metadata;
 using System.Windows;
 using System.Windows.Input;
 
@@ -110,7 +109,7 @@ namespace GradeVerification.ViewModel
         public ICommand DeleteGradeCommand { get; }
         public ICommand UploadFileCommand { get; }
         public ICommand InputGradeCommand { get; }
-
+        public ICommand AddSubjectCommand { get; } // New command for adding subjects
 
         public GradeDashboardViewModel()
         {
@@ -122,7 +121,7 @@ namespace GradeVerification.ViewModel
             DeleteGradeCommand = new RelayCommand(DeleteGrade);
             UploadFileCommand = new RelayCommand(UploadGrades);
             InputGradeCommand = new RelayCommand(InputGrade);
-
+            AddSubjectCommand = new RelayCommand(AddSubject); // Initialize the new command
 
             LoadGrades();
         }
@@ -172,7 +171,6 @@ namespace GradeVerification.ViewModel
             }
         }
 
-
         private void InputGrade(object parameter)
         {
             if (parameter is Grade selectedGrade)
@@ -220,6 +218,59 @@ namespace GradeVerification.ViewModel
             var uploadGrade = new UploadGrades();
             uploadGrade.DataContext = new UploadGradesViewModel(); // Pass selected grade
             uploadGrade.ShowDialog(); // Use ShowDialog to ensure modal behavior
+        }
+
+        private void AddSubject(object parameter)
+        {
+            try
+            {
+                // Open a dialog to select a non-scholar student
+                var selectStudentWindow = new SelectStudent();
+                var selectStudentViewModel = new SelectStudentViewModel();
+                selectStudentWindow.DataContext = selectStudentViewModel;
+                selectStudentWindow.ShowDialog();
+
+                var selectedStudent = selectStudentViewModel.SelectedStudent;
+                if (selectedStudent == null || selectedStudent.Status != "Non-Scholar")
+                {
+                    MessageBox.Show("Please select a non-scholar student.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                // Open a dialog to select a subject
+                var selectSubjectWindow = new SelectSubject();
+                var selectSubjectViewModel = new SelectSubjectViewModel();
+                selectSubjectWindow.DataContext = selectSubjectViewModel;
+                selectSubjectWindow.ShowDialog();
+
+                var selectedSubject = selectSubjectViewModel.SelectedSubject;
+                if (selectedSubject == null)
+                {
+                    MessageBox.Show("Please select a subject.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                // Add the subject to the student
+                using (var context = new ApplicationDbContext())
+                {
+                    var newGrade = new Grade
+                    {
+                        StudentId = selectedStudent.Id,
+                        SubjectId = selectedSubject.SubjectId,
+                        Score = null // Initially null until graded
+                    };
+
+                    context.Grade.Add(newGrade);
+                    context.SaveChanges();
+                }
+
+                // Refresh the grades list
+                LoadGrades();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

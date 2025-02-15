@@ -54,6 +54,13 @@
 
                     <!-- Buttons -->
                     <StackPanel Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <!-- Add Subject for Non-Scholar Button -->
+                        <Button Content="Add Subject" Height="40" Padding="10,0" Background="#007BFF"
+                                Foreground="White" FontSize="14" FontWeight="SemiBold" 
+                                BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
+                                materialDesign:ButtonAssist.CornerRadius="8"
+                                Command="{Binding AddSubjectCommand}" Margin="0,0,10,0"/>
+
                         <!-- Upload Grades Button -->
                         <Button Content="Upload Grades" Height="40" Padding="10,0" Background="#28A745"
                                 Foreground="White" FontSize="14" FontWeight="SemiBold" 
@@ -77,7 +84,6 @@
                           SelectionUnit="FullRow">
 
                     <DataGrid.Columns>
-                        
                         <DataGridTemplateColumn Header="Grade ID" Width="100">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
@@ -103,6 +109,7 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
+
                         <DataGridTextColumn Header="Subject" Binding="{Binding Subject.SubjectCode}" Width="*"/>
                         <DataGridTextColumn Header="Grade" Binding="{Binding Score}" Width="*"/>
 
@@ -111,7 +118,6 @@
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                        
                                         <!-- Grade Entry Button -->
                                         <Button Style="{StaticResource GradeEntryButton}" Command="{Binding DataContext.InputGradeCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}" Margin="5">
@@ -120,10 +126,9 @@
 
                                         <!-- Delete Button -->
                                         <Button Style="{StaticResource gridRemoveButton}" Command="{Binding DataContext.DeleteGradeCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                CommandParameter="{Binding}" Margin="5">
+                                                CommandParameter="{Binding}" Margin="5">
                                             <materialDesign:PackIcon Kind="Delete"/>
                                         </Button>
-                                        
                                     </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
