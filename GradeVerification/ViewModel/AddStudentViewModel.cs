@@ -126,7 +126,7 @@ namespace GradeVerification.ViewModel
                 // Create new student
                 var newStudent = new Student
                 {
-                    StudentId = StudentId, // Ensure this matches the foreign key in Grade
+                    SchoolId = StudentId, // Ensure this matches the foreign key in Grade
                     FirstName = FirstName,
                     LastName = LastName,
                     Email = Email,
@@ -148,7 +148,7 @@ namespace GradeVerification.ViewModel
                 {
                     var newGrade = new Grade
                     {
-                        StudentId = newStudent.StudentId, // Use the correct StudentId
+                        StudentId = newStudent.Id,
                         SubjectId = subject.SubjectId,
                         Score = null // Initially null until graded
                     };

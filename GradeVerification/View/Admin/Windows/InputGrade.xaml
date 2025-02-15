@@ -1,0 +1,105 @@
+﻿<Window x:Class="GradeVerification.View.Admin.Windows.InputGrade"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" WindowStyle="None" WindowStartupLocation="CenterScreen"
+        AllowsTransparency="True" Background="Transparent"
+        Title="GradeEntryWindow" Height="520" Width="780">
+
+    <Border CornerRadius="5" Background="#ffffff" MouseDown="Border_MouseDown">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="300"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="45"/>
+                <RowDefinition Height="475*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <TextBlock Text="Grade Entry" HorizontalAlignment="Left" VerticalAlignment="Center"
+                       Margin="55,0,0,0" FontSize="16" FontWeight="SemiBold" Foreground="#4880ff"/>
+
+            <materialDesign:PackIcon Kind="NotebookOutline"
+                                     Margin="30,10,0,0" Width="20" Height="20" Foreground="#4880ff"/>
+
+            <!-- Top Menu -->
+            <StackPanel Orientation="Horizontal" Grid.Column="1" HorizontalAlignment="Left" Margin="220,0,0,0">
+                <Button Style="{StaticResource menuButton2}" Click="btn_Minimize">
+                    <materialDesign:PackIcon Kind="WindowMinimize" Width="18" Height="18"/>
+                </Button>
+                <Button Style="{StaticResource menuButton2}" Click="btn_Close">
+                    <materialDesign:PackIcon Kind="Close" Width="18" Height="18"/>
+                </Button>
+            </StackPanel>
+
+            <!-- Right Section -->
+            <Border Grid.Row="1" Grid.Column="1" CornerRadius="0 0 5 0">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#2196F3" Offset="0.2"/>
+                        <GradientStop Color="#1565C0" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <StackPanel Margin="60 0 10 0">
+                    <materialDesign:PackIcon Kind="Notebook" Width="80" Height="80" Foreground="#ffffff" Margin="0 40 0 20"/>
+                    <TextBlock Foreground="#ffffff" FontWeight="SemiBold" TextAlignment="Center" FontSize="20" Text="Grade Entry"/>
+                    <TextBlock Foreground="#e6e8ec" FontWeight="Light" TextAlignment="Center" FontSize="13" LineHeight="24"
+                               TextWrapping="Wrap" Margin="40 15 40 20" Text="Fill in the student's grade details below."/>
+                </StackPanel>
+            </Border>
+
+            <!-- Left Section -->
+            <Border Grid.Row="1" Background="#f2f5f8" CornerRadius="0 0 0 5">
+                <Grid VerticalAlignment="Center" Margin="70 0 -60 0">
+                    <Border CornerRadius="7" Background="#ffffff">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="30" ShadowDepth="5" Direction="-130" Opacity="0.1"/>
+                        </Border.Effect>
+                        <Grid Margin="20 0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!--Form Title-->
+                            <StackPanel Orientation="Horizontal" Margin="20 20 0 0">
+                                <materialDesign:PackIcon Kind="School" Width="40" Height="40" Foreground="#374655"/>
+                                <TextBlock Text="Student Information" Foreground="#374655" FontSize="18" Margin="15 0 0 0" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <Separator Grid.Row="1" Height="1" Background="#e1e6eb"/>
+
+                            <!-- Student Name -->
+                            <TextBox Grid.Row="2" Margin="10" materialDesign:HintAssist.Hint="Student Name"
+                                     Text="{Binding StudentName, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <!-- Course Code -->
+                            <TextBox Grid.Row="3" Margin="10" materialDesign:HintAssist.Hint="Course Code"
+                                     Text="{Binding CourseCode, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <!-- Grade -->
+                            <TextBox Grid.Row="4" Margin="10" materialDesign:HintAssist.Hint="Grade"
+                                     Text="{Binding CurrentGrade.Score, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <!-- Buttons -->
+                            <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Center" Margin="20">
+                                <Button Content="Back" Width="100" Style="{StaticResource secondaryButton}" Command="{Binding CancelCommand}"/>
+                                <Button Content="Save Grade" Width="150" Margin="10 0 0 0" Style="{StaticResource mainButton}"
+                                        Command="{Binding SaveCommand}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

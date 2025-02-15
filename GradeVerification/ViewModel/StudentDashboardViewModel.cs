@@ -127,7 +127,7 @@ namespace GradeVerification.ViewModel
             {
                 bool matchesSearch = string.IsNullOrWhiteSpace(SearchText) ||
                                      student.FullName.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                     student.StudentId.ToString().Contains(SearchText);
+                                     student.SchoolId.ToString().Contains(SearchText);
 
                 bool matchesSemester = string.IsNullOrWhiteSpace(SelectedSemester) || student.Semester == SelectedSemester;
                 bool matchesYear = string.IsNullOrWhiteSpace(SelectedYear) || student.Year == SelectedYear;

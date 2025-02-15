@@ -14,7 +14,6 @@ namespace GradeVerification.Model
         public string GradeId { get; set; } = GenerateGradeId();
 
         [Required]
-        [MaxLength(50)]
         [ForeignKey("Student")]
         public string StudentId { get; set; } // Foreign Key to Student's StudentId
 

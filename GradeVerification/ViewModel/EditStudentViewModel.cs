@@ -39,7 +39,7 @@ namespace GradeVerification.ViewModel
             // Initialize properties
             FirstName = student.FirstName;
             LastName = student.LastName;
-            StudentId = student.StudentId;
+            StudentId = student.SchoolId;
             Email = student.Email;
             Semester = student.Semester;
             Year = student.Year;
@@ -122,7 +122,7 @@ namespace GradeVerification.ViewModel
             {
                 using (var context = new ApplicationDbContext())
                 {
-                    var student = context.Students.FirstOrDefault(s => s.StudentId == StudentId);
+                    var student = context.Students.FirstOrDefault(s => s.SchoolId == StudentId);
 
                     if (student == null)
                     {

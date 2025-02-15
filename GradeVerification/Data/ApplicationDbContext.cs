@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+
 namespace GradeVerification.Data
 {
     public class ApplicationDbContext : DbContext
@@ -28,12 +29,18 @@ namespace GradeVerification.Data
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseSqlServer("Server=DESKTOP-QRF1854\\SQLEXPRESS;Database=GradeVerification;Trusted_Connection=True;TrustServerCertificate=True;");
+                optionsBuilder
+                    .UseLazyLoadingProxies() // Enable Lazy Loading
+                    .UseSqlServer("Server=DESKTOP-QRF1854\\SQLEXPRESS;Database=GradeVerification;Trusted_Connection=True;TrustServerCertificate=True;");
             }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Student>()
+                .HasIndex(s => s.SchoolId)
+                .IsUnique();
+
             modelBuilder.Entity<Subject>()
                 .HasOne(s => s.AcademicProgram)
                 .WithMany(p => p.Subjects)

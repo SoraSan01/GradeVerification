@@ -23,6 +23,7 @@
                         <ColumnDefinition Width="1*"/>
                         <ColumnDefinition Width="1*"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- Search TextBox -->
@@ -48,6 +49,12 @@
                             BorderBrush="Transparent" BorderThickness="0" Cursor="Hand" 
                             materialDesign:ButtonAssist.CornerRadius="8"
                             Grid.Column="4" Command="{Binding AddSubjectCommand}"/>
+                    
+                    <Button Content="Upload Subject" Height="40" Padding="20,0" Background="#28A745"
+                            Foreground="White" FontSize="14" FontWeight="SemiBold" 
+                            BorderBrush="Transparent" BorderThickness="0" Cursor="Hand" 
+                            materialDesign:ButtonAssist.CornerRadius="8"
+                            Grid.Column="5" Command="{Binding BulkInsertCommand}"/>
                 </Grid>
             </Border>
 

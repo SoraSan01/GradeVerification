@@ -17,7 +17,7 @@ namespace GradeVerification.Model
 
         [Required]
         [MaxLength(50)]
-        public string StudentId { get; set; }
+        public string SchoolId { get; set; }
 
         [Required]
         [MaxLength(50)]

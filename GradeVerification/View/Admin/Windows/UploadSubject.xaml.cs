@@ -1,6 +1,4 @@
-﻿using GradeVerification.Data;
-using GradeVerification.ViewModel;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,20 +10,23 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace GradeVerification.View.Admin.User_Controls
+namespace GradeVerification.View.Admin.Windows
 {
     /// <summary>
-    /// Interaction logic for GradeDashboard.xaml
+    /// Interaction logic for UploadSubject.xaml
     /// </summary>
-    public partial class GradeDashboard : UserControl
+    public partial class UploadSubject : Window
     {
-        public GradeDashboard()
+        public UploadSubject()
         {
             InitializeComponent();
-            DataContext = new GradeDashboardViewModel();
+        }
+
+        private void Border_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+
         }
     }
 }

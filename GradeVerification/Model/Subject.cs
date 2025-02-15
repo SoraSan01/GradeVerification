@@ -34,7 +34,7 @@ namespace GradeVerification.Model
 
         // Navigation Property
         public virtual AcademicProgram AcademicProgram { get; set; }
-        public virtual ICollection<Grade> Grades { get; set; } = new List<Grade>();
+        public virtual ICollection<Grade> Grades { get; set; }
         public string ProgramCode => AcademicProgram != null ? AcademicProgram.ProgramCode : string.Empty;
 
         // Generate a unique Subject ID with "SUB-" prefix

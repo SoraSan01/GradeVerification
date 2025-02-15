@@ -35,6 +35,7 @@ namespace GradeVerification.ViewModel
             AddSubjectCommand = new RelayCommand(AddSubject);
             EditSubjectCommand = new RelayCommand(EditSubject, CanModifySubject);
             DeleteSubjectCommand = new RelayCommand(DeleteSubject, CanModifySubject);
+            BulkInsertCommand = new RelayCommand(BulkInsert);
         }
 
         public ObservableCollection<Subject> Subjects
@@ -86,6 +87,8 @@ namespace GradeVerification.ViewModel
         public ICommand AddSubjectCommand { get; }
         public ICommand EditSubjectCommand { get; }
         public ICommand DeleteSubjectCommand { get; }
+        public ICommand BulkInsertCommand { get; }
+
 
         private async void LoadSubjectAsync()
         {
@@ -106,7 +109,12 @@ namespace GradeVerification.ViewModel
             }
         }
 
-
+        private void BulkInsert(object parameter)
+        {
+            var uploadSubject = new UploadSubject();
+            uploadSubject.DataContext = new UploadSubjectViewModel();
+            uploadSubject.Show();
+        }
         private void AddSubject(object parameter)
         {
             try
