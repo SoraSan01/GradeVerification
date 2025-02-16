@@ -164,7 +164,9 @@ namespace GradeVerification.ViewModel
 
                     if (!string.IsNullOrWhiteSpace(SearchText))
                     {
-                        query = query.Where(g => g.Student.FullName.Contains(SearchText) || g.Student.SchoolId.Contains(SearchText));
+                        query = query.Where(g => g.Student.FirstName.Contains(SearchText) ||
+                                                  g.Student.LastName.Contains(SearchText) ||
+                                                  g.Student.SchoolId.Contains(SearchText));
                     }
 
                     if (!string.IsNullOrWhiteSpace(SelectedSemester))
@@ -182,9 +184,8 @@ namespace GradeVerification.ViewModel
                         query = query.Where(g => g.Subject.ProgramId == SelectedProgram);
                     }
 
-                    var filteredGrades = await query.ToListAsync(); // Perform the query asynchronously
+                    var filteredGrades = await query.ToListAsync();
 
-                    // Update the Grades collection on the UI thread
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         Grades = new ObservableCollection<Grade>(filteredGrades);
@@ -255,13 +256,6 @@ namespace GradeVerification.ViewModel
                 var selectStudentViewModel = new SelectStudentViewModel();
                 selectStudentWindow.DataContext = selectStudentViewModel;
                 selectStudentWindow.ShowDialog();
-
-                var selectedStudent = selectStudentViewModel.SelectedStudent;
-                if (selectedStudent == null || selectedStudent.Status != "Non-Scholar")
-                {
-                    MessageBox.Show("Please select a non-scholar student.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
-                    return;
-                }
 
                 // Refresh the grades list
                 Task.Run(LoadGradesAsync);

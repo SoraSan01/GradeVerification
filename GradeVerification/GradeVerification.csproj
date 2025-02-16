@@ -26,6 +26,7 @@
     <PackageReference Include="Microsoft.Office.Interop.Word" Version="15.0.4797.1004" />
     <PackageReference Include="ToastNotifications" Version="2.5.1" />
     <PackageReference Include="ToastNotifications.Messages" Version="2.5.1" />
+    <PackageReference Include="Xceed.Words.NET" Version="4.0.25103.5784" />
   </ItemGroup>
 
   <ItemGroup>

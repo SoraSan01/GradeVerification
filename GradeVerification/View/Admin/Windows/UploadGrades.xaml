@@ -8,7 +8,7 @@
         AllowsTransparency="True" Background="Transparent"
         Title="Upload Grades" Height="500" Width="800">
 
-    <Border CornerRadius="5" Background="#ffffff" MouseDown="Border_MouseDown">
+    <Border CornerRadius="5" Background="#ffffff">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -32,33 +32,30 @@
 
                     <!-- File Selection -->
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0 0 0 10">
-                        <TextBlock Text="Select File: " FontSize="14" VerticalAlignment="Center"/>
-                        <TextBox Name="txtFilePath" Width="400" IsReadOnly="True" Margin="10 0" Text="{Binding FilePath}"/>
-                        <Button Content="Browse" Width="80" Command="{Binding BrowseCommand}"/>
+                        <TextBlock Text="Selected File: " FontSize="14" VerticalAlignment="Center"/>
+                        <TextBox Text="{Binding FilePath}" IsReadOnly="True" Margin="10 0" Width="400"/>
+                        <Button Content="Browse" Command="{Binding BrowseCommand}" Width="80" Margin="10 0"/>
                     </StackPanel>
 
-                    <!-- DataGrid -->
+                    <!-- DataGrid Preview -->
                     <Border Grid.Row="1" Background="#FFFFFF" CornerRadius="10" Margin="20" Padding="0">
-                        <DataGrid Name="dgPrograms" Style="{StaticResource DataGridStyle1}"
-                                  RowStyle="{DynamicResource DataGridRowStyle1}"
-                                  ColumnHeaderStyle="{DynamicResource DataGridColumnHeaderStyle1}"
-                                  CellStyle="{DynamicResource DataGridCellStyle1}"
-                                  ItemsSource="{Binding Grades}"
-                                  AutoGenerateColumns="False">
-
+                        <DataGrid ItemsSource="{Binding Grades}" AutoGenerateColumns="False"
+                                IsReadOnly="True" CanUserAddRows="False">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="ID" Binding="{Binding GradeId}" Width="*"/>
-                                <DataGridTextColumn Header="Student ID" Binding="{Binding StudentId}" Width="200"/>
-                                <DataGridTextColumn Header="Subject ID" Binding="{Binding SubjectId}" Width="200"/>
-                                <DataGridTextColumn Header="Score" Binding="{Binding Score}" Width="*"/>
+                                <DataGridTextColumn Header="Student ID" Binding="{Binding Student.StudentId}"/>
+                                <DataGridTextColumn Header="Student Name" Binding="{Binding Student.FullName}"/>
+                                <DataGridTextColumn Header="Subject" Binding="{Binding Subject.SubjectCode}"/>
+                                <DataGridTextColumn Header="Grade" Binding="{Binding Score}"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Border>
 
                     <!-- Buttons -->
                     <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0 10 0 0">
-                        <Button Content="Cancel" Width="100" Style="{StaticResource secondaryButton}" Command="{Binding CancelCommand}"/>
-                        <Button Content="Save" Width="150" Margin="10 0 0 0" Style="{StaticResource mainButton}" Command="{Binding SaveCommand}"/>
+                        <Button Content="Cancel" Command="{Binding CancelCommand}" Width="100" 
+                                Style="{StaticResource secondaryButton}"/>
+                        <Button Content="Save Grades" Command="{Binding SaveCommand}" Width="150" Margin="10 0 0 0"
+                                Style="{StaticResource mainButton}"/>
                     </StackPanel>
                 </Grid>
             </Border>
