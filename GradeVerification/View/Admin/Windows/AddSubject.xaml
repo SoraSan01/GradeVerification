@@ -6,7 +6,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" WindowStyle="None" WindowStartupLocation="CenterScreen"
         AllowsTransparency="True" Background="Transparent"
-        Title="AddSubject" Height="550" Width="750">
+        Title="AddSubject" Height="650" Width="750">
 
     <Border CornerRadius="5" Background="#ffffff" MouseDown="Border_MouseDown">
         <Grid>
@@ -68,6 +68,7 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -104,13 +105,21 @@
                                       DisplayMemberPath="ProgramCode" 
                                       SelectedValuePath="Id"  
                                       SelectedValue="{Binding SelectedProgramID, Mode=TwoWay}"/>
-                            
+
                             <!-- Semester ComboBox -->
                             <ComboBox Grid.Row="4" Grid.Column="1" Margin="10" materialDesign:HintAssist.Hint="Semester"
                                       ItemsSource="{Binding SemesterList}" SelectedItem="{Binding SelectedSemester}"/>
 
+                            <!-- Professor Name -->
+                            <TextBox Grid.Row="5" Grid.Column="0" Margin="10" materialDesign:HintAssist.Hint="Professor Name"
+                                     Text="{Binding ProfessorName, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <!-- Schedule Inputs -->
+                            <TextBox Grid.Row="5" Grid.Column="1" Margin="10" materialDesign:HintAssist.Hint="Start Time"
+                                     Text="{Binding Schedule, UpdateSourceTrigger=PropertyChanged}"/>
+
                             <!-- Buttons -->
-                            <StackPanel Grid.Row="6" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="20">
+                            <StackPanel Grid.Row="8" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="20">
                                 <Button Content="Back" Width="100" Style="{StaticResource secondaryButton}" Command="{Binding CancelCommand}"/>
                                 <Button Content="Save Subject" Width="150" Margin="10 0 0 0" Style="{StaticResource mainButton}"
                                         Command="{Binding SaveSubjectCommand}"/>

@@ -109,8 +109,16 @@
                             <ComboBox Grid.Row="4" Grid.Column="1" Margin="10" materialDesign:HintAssist.Hint="Semester"
                                       ItemsSource="{Binding SemesterList}" SelectedItem="{Binding SelectedSemester}"/>
 
+                            <!-- Professor Name -->
+                            <TextBox Grid.Row="5" Grid.Column="0" Margin="10" materialDesign:HintAssist.Hint="Professor Name"
+                                     Text="{Binding Professor, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <!-- Schedule -->
+                            <TextBox Grid.Row="5" Grid.Column="1" Margin="10" materialDesign:HintAssist.Hint="Schedule"
+                                     Text="{Binding Schedule, UpdateSourceTrigger=PropertyChanged}"/>
+                            
                             <!-- Buttons -->
-                            <StackPanel Grid.Row="6" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="20">
+                            <StackPanel Grid.Row="7" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="20">
                                 <Button Content="Cancel" Width="100" Style="{StaticResource secondaryButton}" Command="{Binding CancelCommand}"/>
                                 <Button Content="Save Changes" Width="150" Margin="10 0 0 0" Style="{StaticResource mainButton}"
                                         Command="{Binding SaveCommand}"/>

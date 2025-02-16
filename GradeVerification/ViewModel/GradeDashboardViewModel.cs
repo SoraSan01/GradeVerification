@@ -7,6 +7,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
@@ -22,7 +23,7 @@ namespace GradeVerification.ViewModel
             {
                 _searchText = value;
                 OnPropertyChanged(nameof(SearchText));
-                FilterGrades();
+                Task.Run(FilterGradesAsync); // Run FilterGradesAsync on a background thread
             }
         }
 
@@ -56,7 +57,7 @@ namespace GradeVerification.ViewModel
             {
                 _selectedSemester = value;
                 OnPropertyChanged(nameof(SelectedSemester));
-                FilterGrades();
+                Task.Run(FilterGradesAsync); // Run FilterGradesAsync on a background thread
             }
         }
 
@@ -79,7 +80,7 @@ namespace GradeVerification.ViewModel
             {
                 _selectedYear = value;
                 OnPropertyChanged(nameof(SelectedYear));
-                FilterGrades();
+                Task.Run(FilterGradesAsync); // Run FilterGradesAsync on a background thread
             }
         }
 
@@ -102,14 +103,14 @@ namespace GradeVerification.ViewModel
             {
                 _selectedProgram = value;
                 OnPropertyChanged(nameof(SelectedProgram));
-                FilterGrades();
+                Task.Run(FilterGradesAsync); // Run FilterGradesAsync on a background thread
             }
         }
 
         public ICommand DeleteGradeCommand { get; }
         public ICommand UploadFileCommand { get; }
         public ICommand InputGradeCommand { get; }
-        public ICommand AddSubjectCommand { get; } // New command for adding subjects
+        public ICommand AddSubjectCommand { get; }
 
         public GradeDashboardViewModel()
         {
@@ -121,53 +122,78 @@ namespace GradeVerification.ViewModel
             DeleteGradeCommand = new RelayCommand(DeleteGrade);
             UploadFileCommand = new RelayCommand(UploadGrades);
             InputGradeCommand = new RelayCommand(InputGrade);
-            AddSubjectCommand = new RelayCommand(AddSubject); // Initialize the new command
+            AddSubjectCommand = new RelayCommand(AddSubject);
 
-            LoadGrades();
+            Task.Run(LoadGradesAsync); // Load initial grades asynchronously
         }
 
-        private void LoadGrades()
+        private async Task LoadGradesAsync()
         {
-            using (var context = new ApplicationDbContext())
+            try
             {
-                var grades = context.Grade
-                                     .Include(g => g.Student)
-                                     .Include(g => g.Subject)
-                                     .ToList();
-                Grades = new ObservableCollection<Grade>(grades);
+                using (var context = new ApplicationDbContext())
+                {
+                    var grades = await context.Grade
+                                              .Include(g => g.Student)
+                                              .Include(g => g.Subject)
+                                              .ToListAsync(); // Perform the query asynchronously
+
+                    // Update the Grades collection on the UI thread
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        Grades = new ObservableCollection<Grade>(grades);
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading grades: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        private void FilterGrades()
+        private async Task FilterGradesAsync()
         {
-            using (var context = new ApplicationDbContext())
+            try
             {
-                var query = context.Grade
-                                   .Include(g => g.Student)
-                                   .Include(g => g.Subject)
-                                   .AsQueryable();
-
-                if (!string.IsNullOrWhiteSpace(SearchText))
+                using (var context = new ApplicationDbContext())
                 {
-                    query = query.Where(g => g.Student.FullName.Contains(SearchText) || g.Student.SchoolId.Contains(SearchText));
-                }
+                    var query = context.Grade
+                                       .Include(g => g.Student)
+                                       .Include(g => g.Subject)
+                                       .AsQueryable();
 
-                if (!string.IsNullOrWhiteSpace(SelectedSemester))
-                {
-                    query = query.Where(g => g.Subject.Semester == SelectedSemester);
-                }
+                    if (!string.IsNullOrWhiteSpace(SearchText))
+                    {
+                        query = query.Where(g => g.Student.FullName.Contains(SearchText) || g.Student.SchoolId.Contains(SearchText));
+                    }
 
-                if (!string.IsNullOrWhiteSpace(SelectedYear))
-                {
-                    query = query.Where(g => g.Subject.Year == SelectedYear);
-                }
+                    if (!string.IsNullOrWhiteSpace(SelectedSemester))
+                    {
+                        query = query.Where(g => g.Subject.Semester == SelectedSemester);
+                    }
 
-                if (!string.IsNullOrWhiteSpace(SelectedProgram))
-                {
-                    query = query.Where(g => g.Subject.ProgramId == SelectedProgram);
-                }
+                    if (!string.IsNullOrWhiteSpace(SelectedYear))
+                    {
+                        query = query.Where(g => g.Subject.Year == SelectedYear);
+                    }
 
-                Grades = new ObservableCollection<Grade>(query.ToList());
+                    if (!string.IsNullOrWhiteSpace(SelectedProgram))
+                    {
+                        query = query.Where(g => g.Subject.ProgramId == SelectedProgram);
+                    }
+
+                    var filteredGrades = await query.ToListAsync(); // Perform the query asynchronously
+
+                    // Update the Grades collection on the UI thread
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        Grades = new ObservableCollection<Grade>(filteredGrades);
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error filtering grades: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -178,12 +204,12 @@ namespace GradeVerification.ViewModel
                 try
                 {
                     var inputGradeWindow = new InputGrade();
-                    var inputGradeViewModel = new InputGradeViewModel(selectedGrade); // Pass selected grade
+                    var inputGradeViewModel = new InputGradeViewModel(selectedGrade); // Pass LoadGradesAsync as a Func<Task>
                     inputGradeWindow.DataContext = inputGradeViewModel;
                     inputGradeWindow.ShowDialog(); // Use ShowDialog to ensure modal behavior
 
                     // Refresh the data after editing
-                    LoadGrades();
+                    Task.Run(LoadGradesAsync); // Make sure to refresh after editing
                 }
                 catch (Exception ex)
                 {
@@ -208,7 +234,7 @@ namespace GradeVerification.ViewModel
                         context.Grade.Remove(selectedGrade);
                         context.SaveChanges();
                     }
-                    LoadGrades(); // Refresh grades after deletion
+                    Task.Run(LoadGradesAsync); // Refresh grades after deletion
                 }
             }
         }
@@ -237,35 +263,8 @@ namespace GradeVerification.ViewModel
                     return;
                 }
 
-                // Open a dialog to select a subject
-                var selectSubjectWindow = new SelectSubject();
-                var selectSubjectViewModel = new SelectSubjectViewModel();
-                selectSubjectWindow.DataContext = selectSubjectViewModel;
-                selectSubjectWindow.ShowDialog();
-
-                var selectedSubject = selectSubjectViewModel.SelectedSubject;
-                if (selectedSubject == null)
-                {
-                    MessageBox.Show("Please select a subject.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
-                    return;
-                }
-
-                // Add the subject to the student
-                using (var context = new ApplicationDbContext())
-                {
-                    var newGrade = new Grade
-                    {
-                        StudentId = selectedStudent.Id,
-                        SubjectId = selectedSubject.SubjectId,
-                        Score = null // Initially null until graded
-                    };
-
-                    context.Grade.Add(newGrade);
-                    context.SaveChanges();
-                }
-
                 // Refresh the grades list
-                LoadGrades();
+                Task.Run(LoadGradesAsync);
             }
             catch (Exception ex)
             {

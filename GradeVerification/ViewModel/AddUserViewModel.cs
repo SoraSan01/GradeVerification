@@ -14,11 +14,18 @@ using GradeVerification.Service;
 using GradeVerification.View.Admin.Windows;
 using System.Text;
 using System.Security.Cryptography;
+using ToastNotifications;
+using ToastNotifications.Lifetime;
+using ToastNotifications.Position;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+using ToastNotifications.Messages;
 
 namespace GradeVerification.ViewModel
 {
     public class AddUserViewModel : INotifyPropertyChanged
     {
+        private Notifier _notifier;
+
         private readonly ApplicationDbContext _dbContext;
         private readonly UserService _userService;
 
@@ -77,12 +84,38 @@ namespace GradeVerification.ViewModel
         public ObservableCollection<string> Roles { get; set; } = new ObservableCollection<string> { "Admin", "Staff", "Encoder" };
 
         public ICommand SaveUserCommand { get; }
+        public ICommand BackCommand { get; }
 
-        public AddUserViewModel(ApplicationDbContext dbContext)
+        private readonly Action _onUpdate;
+
+        public AddUserViewModel(ApplicationDbContext dbContext, Action onUpdate)
         {
             _dbContext = dbContext;
+
+            _notifier = new Notifier(cfg =>
+            {
+                cfg.PositionProvider = new PrimaryScreenPositionProvider(
+                    corner: Corner.BottomRight,
+                    offsetX: 10,
+                    offsetY: 10);
+
+                cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
+                    notificationLifetime: TimeSpan.FromSeconds(3),
+                    maximumNotificationCount: MaximumNotificationCount.FromCount(5));
+
+                cfg.Dispatcher = Application.Current.Dispatcher;
+            });
+
+            _onUpdate = onUpdate;
+
             _userService = new UserService(dbContext);
             SaveUserCommand = new RelayCommand(async _ => await SaveUserAsync());
+            BackCommand = new RelayCommand(Back);
+        }
+
+        private void Back(object obj)
+        {
+            Application.Current.Windows.OfType<AddUser>().FirstOrDefault()?.Close();
         }
 
         private async Task SaveUserAsync()
@@ -95,13 +128,34 @@ namespace GradeVerification.ViewModel
                 string.IsNullOrWhiteSpace(ConfirmPassword) ||
                 string.IsNullOrWhiteSpace(SelectedRole))
             {
-                MessageBox.Show("Please fill in all fields!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ShowErrorNotification("Please fill in all fields!");
+                return;
+            }
+
+            // Validate First Name and Last Name (only letters)
+            if (!IsValidName(FirstName) || !IsValidName(LastName))
+            {
+                ShowErrorNotification("First and Last Name should only contain letters.");
+                return;
+            }
+
+            // Validate Username (only letters and numbers)
+            if (!IsValidUsername(Username))
+            {
+                ShowErrorNotification("Username should only contain letters and numbers.");
+                return;
+            }
+
+            // Validate Email format
+            if (!IsValidEmail(Email))
+            {
+                ShowErrorNotification("Please enter a valid email address.");
                 return;
             }
 
             if (Password != ConfirmPassword)
             {
-                MessageBox.Show("Passwords do not match!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowErrorNotification("Passwords do not match!");
                 return;
             }
 
@@ -115,7 +169,7 @@ namespace GradeVerification.ViewModel
                     {
                         Application.Current.Dispatcher.Invoke(() =>
                         {
-                            MessageBox.Show("Username already exists!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            ShowErrorNotification("Username already exists!");
                         });
                         return false;
                     }
@@ -154,9 +208,29 @@ namespace GradeVerification.ViewModel
 
             if (userAdded)
             {
-                MessageBox.Show("User successfully added!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                ShowSuccessNotification("User successfully added!");
                 ClearFields();
+                _onUpdate?.Invoke();
             }
+        }
+
+        private bool IsValidName(string name)
+        {
+            // Check if name contains only letters and spaces
+            return !string.IsNullOrEmpty(name) && name.All(c => Char.IsLetter(c) || Char.IsWhiteSpace(c));
+        }
+
+        private bool IsValidUsername(string username)
+        {
+            // Check if username contains only letters and numbers
+            return !string.IsNullOrEmpty(username) && username.All(c => Char.IsLetterOrDigit(c));
+        }
+
+        private bool IsValidEmail(string email)
+        {
+            // Regular expression for email validation
+            var emailRegex = new System.Text.RegularExpressions.Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
+            return emailRegex.IsMatch(email);
         }
 
         private string HashPassword(string password)
@@ -191,6 +265,16 @@ namespace GradeVerification.ViewModel
         protected void OnPropertyChanged([CallerMemberName] string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+
+        private void ShowSuccessNotification(string message)
+        {
+            _notifier.ShowSuccess(message);
+        }
+
+        private void ShowErrorNotification(string message)
+        {
+            _notifier.ShowError(message);
         }
     }
 }

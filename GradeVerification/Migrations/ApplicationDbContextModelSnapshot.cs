@@ -125,9 +125,15 @@ namespace GradeVerification.Migrations
                     b.Property<string>("SubjectId")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("Professor")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ProgramId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Schedule")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Semester")
                         .IsRequired()

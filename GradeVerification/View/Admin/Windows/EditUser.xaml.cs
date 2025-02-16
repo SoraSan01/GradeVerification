@@ -22,10 +22,9 @@ namespace GradeVerification.View.Admin.Windows
     /// </summary>
     public partial class EditUser : Window
     {
-        public EditUser(User user, ApplicationDbContext dbContext)
+        public EditUser()
         {
             InitializeComponent();
-            DataContext = new EditUserViewModel(user, dbContext);
         }
 
         private void Border_MouseDown(object sender, MouseButtonEventArgs e)

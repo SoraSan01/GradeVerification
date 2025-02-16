@@ -32,11 +32,5 @@ namespace GradeVerification.View.Admin.User_Controls
             _dbContext = dbContext;
             DataContext = new UserDashboardViewModel(_dbContext);
         }
-
-        private void btn_AddUser(object sender, RoutedEventArgs e)
-        {
-            AddUser addUser = new AddUser(_dbContext);
-            addUser.Show();
-        }
     }
 }

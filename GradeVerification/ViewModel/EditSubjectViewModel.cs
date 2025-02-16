@@ -9,11 +9,17 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using ToastNotifications;
+using ToastNotifications.Lifetime;
+using ToastNotifications.Messages;
+using ToastNotifications.Position;
 
 namespace GradeVerification.ViewModel
 {
     public class EditSubjectViewModel : INotifyPropertyChanged
     {
+        private Notifier _notifier;
+
         private readonly AcademicProgramService _programService;
         private readonly Action _onUpdate; // Callback for UI refresh
         private readonly EditSubject _editWindow; // Reference to the window
@@ -71,11 +77,39 @@ namespace GradeVerification.ViewModel
             set { _selectedSemester = value; OnPropertyChanged(nameof(SelectedSemester)); }
         }
 
+        private string _professor;
+        public string Professor
+        {
+            get => _professor;
+            set { _professor = value; OnPropertyChanged(nameof(Professor)); }
+        }
+
+        private string _schedule;
+        public string Schedule
+        {
+            get => _schedule;
+            set { _schedule = value; OnPropertyChanged(nameof(Schedule)); }
+        }
+
         public ICommand SaveCommand { get; }
         public ICommand CancelCommand { get; }
 
         public EditSubjectViewModel(Subject subject, Action onUpdate, EditSubject editWindow)
         {
+            _notifier = new Notifier(cfg =>
+            {
+                cfg.PositionProvider = new PrimaryScreenPositionProvider(
+                    corner: Corner.BottomRight,
+                    offsetX: 10,
+                    offsetY: 10);
+
+                cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
+                    notificationLifetime: TimeSpan.FromSeconds(3),
+                    maximumNotificationCount: MaximumNotificationCount.FromCount(5));
+
+                cfg.Dispatcher = Application.Current.Dispatcher;
+            });
+
             _programService = new AcademicProgramService();
             _onUpdate = onUpdate;
             _editWindow = editWindow;
@@ -91,6 +125,8 @@ namespace GradeVerification.ViewModel
             SelectedYear = subject.Year;
             SelectedSemester = subject.Semester;
             SelectedProgramID = subject.ProgramId;
+            Professor = subject.Professor;
+            Schedule = subject.Schedule;
 
             LoadData();
 
@@ -113,17 +149,18 @@ namespace GradeVerification.ViewModel
                         existingSubject.Year = SelectedYear;
                         existingSubject.Semester = SelectedSemester;
                         existingSubject.ProgramId = SelectedProgramID;
+                        existingSubject.Professor = Professor;
+                        existingSubject.Schedule = Schedule;
 
                         await context.SaveChangesAsync(); // Save changes to the database
                     }
                     else
                     {
-                        MessageBox.Show("Subject not found!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        ShowSuccessNotification("Subject not found!");
                         return;
                     }
                 }
-
-                MessageBox.Show("Subject updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                ShowSuccessNotification("Subject updated successfully!");
 
                 _onUpdate?.Invoke(); // Notify UI to refresh data
                 _editWindow?.Close(); // Close the edit window
@@ -154,6 +191,16 @@ namespace GradeVerification.ViewModel
         protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        private void ShowSuccessNotification(string message)
+        {
+            _notifier.ShowSuccess(message);
+        }
+
+        private void ShowErrorNotification(string message)
+        {
+            _notifier.ShowError(message);
         }
     }
 }

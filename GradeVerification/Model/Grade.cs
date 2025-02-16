@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.ComponentModel;
 
 namespace GradeVerification.Model
 {
@@ -23,6 +24,21 @@ namespace GradeVerification.Model
 
         public string? Score { get; set; } // Grade score (can be null initially)
 
+        [NotMapped]
+        public decimal? GradeAsNumber
+        {
+            get
+            {
+                if (decimal.TryParse(Score, out decimal numericGrade))
+                    return numericGrade;
+                return null; // Return null for non-numeric values like "INC"
+            }
+        }
+
+        // Determine if the grade is below passing
+        [NotMapped]
+        public bool IsGradeLow => GradeAsNumber.HasValue && GradeAsNumber < 75;
+
         // Navigation Properties
         public virtual Student Student { get; set; }
         public virtual Subject Subject { get; set; }
@@ -32,5 +48,6 @@ namespace GradeVerification.Model
         {
             return "GRD-" + Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper();
         }
+
     }
 }

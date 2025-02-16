@@ -58,7 +58,7 @@ namespace GradeVerification.ViewModel
             {
                 _searchText = value;
                 OnPropertyChanged();
-                FilterSubjects();
+                Task.Run(FilterSubjects);
             }
         }
 
@@ -69,7 +69,7 @@ namespace GradeVerification.ViewModel
             {
                 _selectedYear = value;
                 OnPropertyChanged();
-                FilterSubjects();
+                Task.Run(FilterSubjects);
             }
         }
 
@@ -80,7 +80,7 @@ namespace GradeVerification.ViewModel
             {
                 _selectedSemester = value;
                 OnPropertyChanged();
-                FilterSubjects();
+                Task.Run(FilterSubjects);
             }
         }
 
@@ -94,21 +94,19 @@ namespace GradeVerification.ViewModel
         {
             try
             {
-                var subjectList = await _context.Subjects
-                                                .ToListAsync();
-
-                Subjects = new ObservableCollection<Subject>(subjectList);
+                var subjects = await _context.Subjects.ToListAsync();
+                Subjects = new ObservableCollection<Subject>(subjects);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("Error loading subjects: " + ex.Message);
+                Debug.WriteLine($"Error loading subjects: {ex.Message}");
             }
         }
 
         private void BulkInsert(object parameter)
         {
             var uploadSubject = new UploadSubject();
-            uploadSubject.DataContext = new UploadSubjectViewModel();
+            uploadSubject.DataContext = new UploadSubjectViewModel(LoadSubjectAsync);
             uploadSubject.Show();
         }
         private void AddSubject(object parameter)
@@ -117,7 +115,7 @@ namespace GradeVerification.ViewModel
             {
                 var addSubjectWindow = new AddSubject
                 {
-                    DataContext = new AddSubjectViewModel(_context)
+                    DataContext = new AddSubjectViewModel(_context, LoadSubjectAsync)
                 };
 
                 if (addSubjectWindow.ShowDialog() == true)
@@ -155,22 +153,31 @@ namespace GradeVerification.ViewModel
 
         private bool CanModifySubject(object parameter) => parameter is Subject;
 
-        private void FilterSubjects()
+        private async Task FilterSubjects()
         {
-            var query = _context.Subjects
-                .Include(s => s.AcademicProgram)
-                .AsQueryable();
+            try
+            {
+                var query = _context.Subjects
+                    .Include(s => s.AcademicProgram)
+                    .AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(SearchText))
-                query = query.Where(s => s.SubjectName.Contains(SearchText) || s.SubjectCode.Contains(SearchText));
+                if (!string.IsNullOrWhiteSpace(SearchText))
+                    query = query.Where(s => s.SubjectName.Contains(SearchText) || s.SubjectCode.Contains(SearchText));
 
-            if (!string.IsNullOrWhiteSpace(SelectedYear))
-                query = query.Where(s => s.Year == SelectedYear);
+                if (!string.IsNullOrWhiteSpace(SelectedYear))
+                    query = query.Where(s => s.Year == SelectedYear);
 
-            if (!string.IsNullOrWhiteSpace(SelectedSemester))
-                query = query.Where(s => s.Semester == SelectedSemester);
+                if (!string.IsNullOrWhiteSpace(SelectedSemester))
+                    query = query.Where(s => s.Semester == SelectedSemester);
 
-            Subjects = new ObservableCollection<Subject>(query.ToList());
+                var filteredSubjects = await query.ToListAsync(); // Asynchronously get the filtered data
+
+                Subjects = new ObservableCollection<Subject>(filteredSubjects);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error filtering subjects: {ex.Message}");
+            }
         }
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)

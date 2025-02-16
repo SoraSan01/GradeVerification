@@ -17,11 +17,19 @@ using GradeVerification.Commands;
 using GradeVerification.Model;
 using GradeVerification.Data;
 using GradeVerification.View.Admin.Windows;
+using ToastNotifications;
+using ToastNotifications.Lifetime;
+using ToastNotifications.Position;
+using ToastNotifications.Messages;
 
 namespace GradeVerification.ViewModel
 {
     public class AddProgramViewModel : INotifyPropertyChanged
     {
+
+        private Notifier _notifier;
+        private readonly Action _onUpdate;
+
         private string _programCode;
         private string _programName;
 
@@ -49,10 +57,23 @@ namespace GradeVerification.ViewModel
         public ICommand CancelCommand { get; }
 
         private readonly ApplicationDbContext _dbContext;
-        private readonly Action _onUpdate; // Callback to refresh the program list
 
         public AddProgramViewModel(ApplicationDbContext dbContext, Action onUpdate)
         {
+            _notifier = new Notifier(cfg =>
+            {
+                cfg.PositionProvider = new PrimaryScreenPositionProvider(
+                    corner: Corner.BottomRight,
+                    offsetX: 10,
+                    offsetY: 10);
+
+                cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
+                    notificationLifetime: TimeSpan.FromSeconds(3),
+                    maximumNotificationCount: MaximumNotificationCount.FromCount(5));
+
+                cfg.Dispatcher = Application.Current.Dispatcher;
+            });
+
             _dbContext = dbContext;
             _onUpdate = onUpdate;
 
@@ -92,7 +113,7 @@ namespace GradeVerification.ViewModel
                     context.SaveChanges();
                 }
 
-                MessageBox.Show($"Program Saved!\nCode: {ProgramCode}\nName: {ProgramName}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                ShowSuccessNotification("Program Saved!");
 
                 // Reset fields after saving
                 ProgramCode = string.Empty;
@@ -102,6 +123,7 @@ namespace GradeVerification.ViewModel
             }
             catch (Exception ex)
             {
+                ShowErrorNotification("Error saving program");
                 MessageBox.Show($"Error saving program: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -115,6 +137,16 @@ namespace GradeVerification.ViewModel
         protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        private void ShowSuccessNotification(string message)
+        {
+            _notifier.ShowSuccess(message);
+        }
+
+        private void ShowErrorNotification(string message)
+        {
+            _notifier.ShowError(message);
         }
     }
 }

@@ -21,6 +21,10 @@
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="1.5*"/>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
@@ -29,7 +33,18 @@
                              materialDesign:HintAssist.Hint="Search Subject..." 
                              Style="{StaticResource MaterialDesignOutlinedTextBox}" 
                              FontSize="14" BorderBrush="#E0E0E0" Grid.Column="0"/>
+                    
+                        <ComboBox Width="150" Grid.Column="1" ItemsSource="{Binding Programs}" SelectedItem="{Binding SelectedProgram, Mode=TwoWay}"
+              materialDesign:HintAssist.Hint="Filter by Program" Margin="5"/>
+
+                        <ComboBox Width="120" Grid.Column="2" ItemsSource="{Binding Years}" SelectedItem="{Binding SelectedYear, Mode=TwoWay}"
+              materialDesign:HintAssist.Hint="Filter by Year" Margin="5"/>
+
+                        <ComboBox Width="120" Grid.Column="3" ItemsSource="{Binding Semesters}" SelectedItem="{Binding SelectedSemester, Mode=TwoWay}"
+              materialDesign:HintAssist.Hint="Filter by Semester" Margin="5"/>
+
                 </Grid>
+                
             </Border>
 
             <!-- Subject Data Table -->
@@ -38,14 +53,46 @@
                           RowStyle="{DynamicResource DataGridRowStyle1}"
                           ColumnHeaderStyle="{DynamicResource DataGridColumnHeaderStyle1}"
                           CellStyle="{DynamicResource DataGridCellStyle1}"
-                          ItemsSource="{Binding FilteredSubjects}" SelectionMode="Single"
-                          SelectedItem="{Binding SelectedSubject, Mode=TwoWay}"
+                          ItemsSource="{Binding Subjects}"
+                          AutoGenerateColumns="False"
                           CanUserAddRows="False" IsReadOnly="True">
 
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Subject Code" Binding="{Binding SubjectCode}" Width="*"/>
-                        <DataGridTextColumn Header="Subject Name" Binding="{Binding SubjectName}" Width="*"/>
-                        <DataGridTextColumn Header="Units" Binding="{Binding Units}" Width="*"/>
+                        
+                        <DataGridTextColumn Header="Subject Code" Binding="{Binding SubjectCode}" Width="*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="TextWrapping" Value="Wrap"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="Subject Name" Binding="{Binding SubjectName}" Width="*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="TextWrapping" Value="Wrap"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="Units" Binding="{Binding Units}" Width="*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="TextWrapping" Value="Wrap"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- Checkbox Column -->
+                        <DataGridTemplateColumn Header="Select" Width="*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox Style="{StaticResource MaterialDesignActionDarkCheckBox}" 
+                                              IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
                     </DataGrid.Columns>
                 </DataGrid>
             </Border>
@@ -56,9 +103,10 @@
                         Foreground="#000000" FontSize="14" FontWeight="SemiBold" BorderBrush="Transparent"
                         materialDesign:ButtonAssist.CornerRadius="8" Command="{Binding CancelCommand}"/>
 
-                <Button Content="Select" Width="120" Height="40" Padding="10" Background="#28A745"
+                <Button Content="Save Selected" Width="150" Height="40" Padding="10" Background="#28A745"
                         Foreground="White" FontSize="14" FontWeight="SemiBold" BorderBrush="Transparent"
-                        materialDesign:ButtonAssist.CornerRadius="8" Margin="10,0,0,0" Command="{Binding SelectCommand}"/>
+                        materialDesign:ButtonAssist.CornerRadius="8" Margin="10,0,0,0"
+                        Command="{Binding SaveSelectedSubjectsCommand}"/>
             </StackPanel>
         </Grid>
     </Border>

@@ -88,7 +88,7 @@
                                      materialDesign:HintAssist.Hint="Last Name"/>
 
                             <TextBox Grid.Row="3" Grid.Column="0" Margin="10" IsReadOnly="True"
-                                     Text="{Binding StudentId, UpdateSourceTrigger=PropertyChanged}"
+                                     Text="{Binding SchoolId, UpdateSourceTrigger=PropertyChanged}"
                                      materialDesign:HintAssist.Hint="Student ID (Read-Only)"/>
                             <TextBox Grid.Row="3" Grid.Column="1" Margin="10"
                                      Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}"

@@ -15,11 +15,18 @@ using GradeVerification.View.Admin.Windows;
 using System.Text.RegularExpressions;
 using System.Globalization;
 using GradeVerification.Data;
+using ToastNotifications;
+using ToastNotifications.Lifetime;
+using ToastNotifications.Position;
+using ToastNotifications.Messages;
 
 namespace GradeVerification.ViewModel
 {
     public class UploadSubjectViewModel : INotifyPropertyChanged
     {
+        private Notifier _notifier;
+        private readonly Action _onUpdate;
+
         private string _filePath;
         private readonly SubjectService _subjectService;
         private readonly AcademicProgramService _academicProgramService;
@@ -52,8 +59,22 @@ namespace GradeVerification.ViewModel
         public ICommand SaveCommand { get; }
         public ICommand CancelCommand { get; }
 
-        public UploadSubjectViewModel()
+        public UploadSubjectViewModel(Action onUpdate)
         {
+            _notifier = new Notifier(cfg =>
+            {
+                cfg.PositionProvider = new PrimaryScreenPositionProvider(
+                    corner: Corner.BottomRight,
+                    offsetX: 10,
+                    offsetY: 10);
+
+                cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
+                    notificationLifetime: TimeSpan.FromSeconds(3),
+                    maximumNotificationCount: MaximumNotificationCount.FromCount(5));
+
+                cfg.Dispatcher = Application.Current.Dispatcher;
+            });
+
             Subjects = new ObservableCollection<Subject>();
             _subjectService = new SubjectService(_dbContext);
             _academicProgramService = new AcademicProgramService();
@@ -61,6 +82,7 @@ namespace GradeVerification.ViewModel
             BrowseCommand = new RelayCommand(BrowseFile);
             SaveCommand = new RelayCommand(async _ => await SaveSubjectsAsync(), _ => CanSave);
             CancelCommand = new RelayCommand(CloseWindow);
+            _onUpdate = onUpdate;
         }
 
         private void BrowseFile(object parameter)
@@ -82,7 +104,7 @@ namespace GradeVerification.ViewModel
         {
             if (string.IsNullOrEmpty(FilePath))
             {
-                MessageBox.Show("Please select a file first.");
+                ShowErrorNotification("Please Select a File");
                 return;
             }
 
@@ -189,6 +211,7 @@ namespace GradeVerification.ViewModel
             }
             catch (Exception ex)
             {
+                ShowErrorNotification("Error loading Excel data");
                 MessageBox.Show($"Error loading Excel data: {ex.Message}");
             }
         }
@@ -198,8 +221,11 @@ namespace GradeVerification.ViewModel
         {
             if (string.IsNullOrWhiteSpace(year)) return year;
 
+            // Remove extra spaces and normalize
+            string normalized = Regex.Replace(year.Trim(), @"\s+", " ");
+
             // Capitalize the first letter of each word
-            return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(year.ToLower());
+            return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(normalized.ToLower());
         }
 
         private bool IsYearHeader(string cellText)
@@ -235,7 +261,7 @@ namespace GradeVerification.ViewModel
         {
             if (Subjects == null || !Subjects.Any())
             {
-                MessageBox.Show("No subjects to save.");
+                ShowErrorNotification("No subjects to save.");
                 return;
             }
 
@@ -252,7 +278,8 @@ namespace GradeVerification.ViewModel
 
                 await _subjectService.SaveSubjectsAsync(observableSubjects);
 
-                MessageBox.Show("Subjects successfully saved.");
+                ShowSuccessNotification("Subjects successfully saved.");
+                _onUpdate?.Invoke();
 
                 // Refresh UI: Clear and reset `Subjects`
                 Application.Current.Dispatcher.Invoke(() =>
@@ -265,6 +292,7 @@ namespace GradeVerification.ViewModel
             }
             catch (Exception ex)
             {
+                ShowErrorNotification("Error saving subjects");
                 MessageBox.Show($"Error saving subjects: {ex.Message}");
             }
         }
@@ -278,6 +306,15 @@ namespace GradeVerification.ViewModel
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+        private void ShowSuccessNotification(string message)
+        {
+            _notifier.ShowSuccess(message);
+        }
+
+        private void ShowErrorNotification(string message)
+        {
+            _notifier.ShowError(message);
         }
     }
 }

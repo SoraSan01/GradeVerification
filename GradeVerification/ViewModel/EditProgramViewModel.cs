@@ -10,11 +10,17 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using ToastNotifications;
+using ToastNotifications.Lifetime;
+using ToastNotifications.Messages;
+using ToastNotifications.Position;
 
 namespace GradeVerification.ViewModel
 {
     public class EditProgramViewModel : INotifyPropertyChanged
     {
+        private Notifier _notifier;
+
         private string _programCode;
         private string _programName;
 
@@ -45,6 +51,21 @@ namespace GradeVerification.ViewModel
 
         public EditProgramViewModel(AcademicProgram program, EditProgram editWindow, Action onUpdate)
         {
+
+            _notifier = new Notifier(cfg =>
+            {
+                cfg.PositionProvider = new PrimaryScreenPositionProvider(
+                    corner: Corner.BottomRight,
+                    offsetX: 10,
+                    offsetY: 10);
+
+                cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
+                    notificationLifetime: TimeSpan.FromSeconds(3),
+                    maximumNotificationCount: MaximumNotificationCount.FromCount(5));
+
+                cfg.Dispatcher = Application.Current.Dispatcher;
+            });
+
             _editWindow = editWindow;
             _onUpdate = onUpdate;
 
@@ -69,6 +90,8 @@ namespace GradeVerification.ViewModel
                 }
             }
 
+            ShowSuccessNotification("Program Updated Successfully!");
+
             _onUpdate?.Invoke(); // Notify the main view to refresh
             _editWindow.Close(); // Close window after saving
         }
@@ -77,6 +100,16 @@ namespace GradeVerification.ViewModel
         {
             // Close the window without saving
             Application.Current.Windows.OfType<EditProgram>().FirstOrDefault()?.Close();
+        }
+
+        private void ShowSuccessNotification(string message)
+        {
+            _notifier.ShowSuccess(message);
+        }
+
+        private void ShowErrorNotification(string message)
+        {
+            _notifier.ShowError(message);
         }
     }
 }

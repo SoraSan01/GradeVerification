@@ -10,11 +10,17 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows;
+using ToastNotifications;
+using ToastNotifications.Lifetime;
+using ToastNotifications.Position;
+using ToastNotifications.Messages;
 
 namespace GradeVerification.ViewModel
 {
     public class InputGradeViewModel : INotifyPropertyChanged
     {
+        private readonly Action _onUpdate;
+        private Notifier _notifier;
 
         private string _studentName;
         private string _courseCode;
@@ -67,6 +73,21 @@ namespace GradeVerification.ViewModel
 
         public InputGradeViewModel(Grade grade)
         {
+
+            _notifier = new Notifier(cfg =>
+            {
+                cfg.PositionProvider = new PrimaryScreenPositionProvider(
+                    corner: Corner.BottomRight,
+                    offsetX: 10,
+                    offsetY: 10);
+
+                cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
+                    notificationLifetime: TimeSpan.FromSeconds(3),
+                    maximumNotificationCount: MaximumNotificationCount.FromCount(5));
+
+                cfg.Dispatcher = Application.Current.Dispatcher;
+            });
+
             CurrentGrade = grade ?? new Grade(); // If no grade is provided, create a new one
             SaveCommand = new RelayCommand(SaveGrade);
             CancelCommand = new RelayCommand(Cancel);
@@ -91,8 +112,8 @@ namespace GradeVerification.ViewModel
 
                 context.SaveChanges();
             }
-
-            MessageBox.Show("Grade saved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            ShowSuccessNotification("Grade saved successfully!");
+            _onUpdate?.Invoke(); // Notify main view to refresh UI
         }
 
         private void Cancel(object parameter)
@@ -107,6 +128,16 @@ namespace GradeVerification.ViewModel
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string propertyName) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+        private void ShowSuccessNotification(string message)
+        {
+            _notifier.ShowSuccess(message);
+        }
+
+        private void ShowErrorNotification(string message)
+        {
+            _notifier.ShowError(message);
+        }
     }
 
 }

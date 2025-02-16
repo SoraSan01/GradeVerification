@@ -35,15 +35,15 @@
                     </Border>
 
                     <StackPanel Margin="10 0 0 0" VerticalAlignment="Center">
-                        <TextBlock Text="Eran, Reyven" FontSize="15" Margin="0 0 0 5" Foreground="#424242"/>
-                        <TextBlock Text="Admin" FontSize="11" Foreground="#616161"/>
+                        <TextBlock x:Name="txtUserFullName" Text="Eran, Reyven" FontSize="15" Margin="0 0 0 5" Foreground="#424242"/>
+                        <TextBlock x:Name="txtUserRole" Text="Admin" FontSize="11" Foreground="#616161"/>
                     </StackPanel>
                 </StackPanel>
 
                 <Separator Height="0.8" Margin="20 30" Background="#E0E0E0"/>
 
                 <!-- Menu Buttons -->
-                <Button Style="{StaticResource menuButtonActive}" Click="btn_dashboard">
+                <Button Style="{StaticResource menuButton}" Click="btn_dashboard">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="ViewDashboard" Style="{StaticResource menuButtonIcon}"/>
                         <TextBlock Text="Dashboard" Style="{StaticResource menuButtonText}"/>

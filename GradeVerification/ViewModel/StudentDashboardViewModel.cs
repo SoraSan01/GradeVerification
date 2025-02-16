@@ -12,11 +12,17 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using ToastNotifications;
+using ToastNotifications.Lifetime;
+using ToastNotifications.Position;
+using ToastNotifications.Messages;
 
 namespace GradeVerification.ViewModel
 {
     public class StudentDashboardViewModel : INotifyPropertyChanged
     {
+        private Notifier _notifier;
+
         public ObservableCollection<Student> Students { get; set; } = new ObservableCollection<Student>();
         private ObservableCollection<Student> _allStudents = new ObservableCollection<Student>();
 
@@ -77,14 +83,42 @@ namespace GradeVerification.ViewModel
         public ICommand AddStudentCommand { get; }
         public ICommand EditStudentCommand { get; }
         public ICommand DeleteStudentCommand { get; }
+        public ICommand ShowGradeCommand { get; }
 
         public StudentDashboardViewModel()
         {
+            _notifier = new Notifier(cfg =>
+            {
+                cfg.PositionProvider = new PrimaryScreenPositionProvider(
+                    corner: Corner.BottomRight,
+                    offsetX: 10,
+                    offsetY: 10);
+
+                cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
+                    notificationLifetime: TimeSpan.FromSeconds(3),
+                    maximumNotificationCount: MaximumNotificationCount.FromCount(5));
+
+                cfg.Dispatcher = Application.Current.Dispatcher;
+            });
+
             AddStudentCommand = new RelayCommand(AddStudent);
             EditStudentCommand = new RelayCommand(EditStudent, CanModifyStudent);
             DeleteStudentCommand = new RelayCommand(async param => await DeleteStudent(param), CanModifyStudent);
+            ShowGradeCommand = new RelayCommand(ShowGrade, CanModifyStudent);
 
             LoadStudentsAsync();
+        }
+
+        private void ShowGrade(object parameter)
+        {
+            if (parameter is Student student)
+            {
+                var showGradeWindow = new ShowGradeWindow
+                {
+                    DataContext = new ShowGradeViewModel(student)
+                };
+                showGradeWindow.ShowDialog();
+            }
         }
 
         private async void LoadStudentsAsync()
@@ -144,7 +178,7 @@ namespace GradeVerification.ViewModel
         {
             var addStudentWindow = new AddStudent
             {
-                DataContext = new AddStudentViewModel()
+                DataContext = new AddStudentViewModel(LoadStudentsAsync)
             };
 
             if (addStudentWindow.ShowDialog() == true)
@@ -167,23 +201,30 @@ namespace GradeVerification.ViewModel
         {
             if (parameter is Student studentToDelete)
             {
-                try
-                {
-                    using (var context = new ApplicationDbContext())
-                    {
-                        var student = await context.Students.FindAsync(studentToDelete.Id);
-                        if (student != null)
-                        {
-                            context.Students.Remove(student);
-                            await context.SaveChangesAsync();
-                        }
-                    }
+                var result = MessageBox.Show($"Are you sure you want to delete {studentToDelete.FullName}?",
+                    "Confirm Deletion", MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
-                    Application.Current.Dispatcher.Invoke(() => Students.Remove(studentToDelete));
-                }
-                catch (Exception ex)
+                if (result == MessageBoxResult.Yes)
                 {
-                    Debug.WriteLine($"Error deleting student: {ex.Message}");
+                    try
+                    {
+                        using (var context = new ApplicationDbContext())
+                        {
+                            if (parameter is Student student)
+                            {
+                                context.Students.Remove(student);
+                                context.SaveChanges();
+                                LoadStudentsAsync();
+                            }
+                        }
+
+                        ShowSuccessNotification("Student deleted successfully!");
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Error deleting student: {ex.Message}");
+                        ShowErrorNotification("Error deleting student.");
+                    }
                 }
             }
         }
@@ -194,6 +235,16 @@ namespace GradeVerification.ViewModel
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        private void ShowSuccessNotification(string message)
+        {
+            _notifier.ShowSuccess(message);
+        }
+
+        private void ShowErrorNotification(string message)
+        {
+            _notifier.ShowError(message);
         }
     }
 

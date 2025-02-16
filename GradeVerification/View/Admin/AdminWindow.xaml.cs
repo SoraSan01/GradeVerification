@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using GradeVerification.Data;
+using GradeVerification.Model;
 
 namespace GradeVerification.View.Admin
 {
@@ -21,15 +22,41 @@ namespace GradeVerification.View.Admin
     /// </summary>
     public partial class AdminWindow : Window
     {
+        private Button activeButton; // Track the active button
+
         private readonly ApplicationDbContext _dbContext;
-        public AdminWindow(ApplicationDbContext dbContext)
+        public AdminWindow(ApplicationDbContext dbContext, User loggedInUser)
         {
+
             InitializeComponent();
+
             _dbContext = dbContext;
+            DisplayUserDetails(loggedInUser);
 
             MainContentControl.Content = new Dashboard();
         }
 
+        private void SetActiveButton(Button clickedButton)
+        {
+            // Reset the previous active button to normal style
+            if (activeButton != null)
+            {
+                activeButton.Style = (Style)FindResource("menuButton");
+            }
+
+            // Set the new active button
+            clickedButton.Style = (Style)FindResource("menuButtonActive");
+            activeButton = clickedButton;
+        }
+
+        private void DisplayUserDetails(User user)
+        {
+            if (user != null)
+            {
+                txtUserFullName.Text = user.FullName;
+                txtUserRole.Text = user.Role;
+            }
+        }
 
         private void Border_MouseDown(object sender, MouseButtonEventArgs e)
         {
@@ -40,34 +67,39 @@ namespace GradeVerification.View.Admin
 
         private void btn_students(object sender, RoutedEventArgs e)
         {
+            SetActiveButton((Button)sender);
             MainContentControl.Content = new StudentDashboard(_dbContext);
         }
 
         private void btn_dashboard(object sender, RoutedEventArgs e)
         {
+            SetActiveButton((Button)sender);
             MainContentControl.Content = new Dashboard();
         }
 
         private void btn_grades(object sender, RoutedEventArgs e)
         {
+            SetActiveButton((Button)sender);
             MainContentControl.Content = new GradeDashboard();
         }
 
         private void btn_subjects(object sender, RoutedEventArgs e)
         {
+            SetActiveButton((Button)sender);
             var subjectDashboard = new SubjectsDashboard(_dbContext);
             MainContentControl.Content = subjectDashboard;
         }
 
         private void btn_programs(object sender, RoutedEventArgs e)
         {
+            SetActiveButton((Button)sender);
             var programDashbaord = new ProgramDashboard(_dbContext);
             MainContentControl.Content = programDashbaord;
         }
 
         private void btn_users(object sender, RoutedEventArgs e)
         {
-
+            SetActiveButton((Button)sender);
             var studentDashboard = new UserDashboard(_dbContext);
             MainContentControl.Content = studentDashboard;
         }

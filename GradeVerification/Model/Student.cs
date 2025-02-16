@@ -13,7 +13,7 @@ namespace GradeVerification.Model
     {
         [Key]
         [Required]
-        public string Id { get; set; } // Primary Key
+        public string Id { get; set; }
 
         [Required]
         [MaxLength(50)]
@@ -50,16 +50,16 @@ namespace GradeVerification.Model
         public virtual AcademicProgram AcademicProgram { get; set; } // Navigation Property
         public virtual ICollection<Grade> Grades { get; set; } = new List<Grade>();
 
-        public string FullName => $"{FirstName} {LastName}";
-
-        public Student()
-        {
-            Id = GenerateStudentId();
-        }
+        public string FullName => $"{LastName} {FirstName}";
 
         private string GenerateStudentId()
         {
             return $"STU-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}";
+        }
+
+        public Student()
+        {
+            Id = GenerateStudentId();
         }
 
     }

@@ -10,12 +10,21 @@ using GradeVerification.Commands;
 using GradeVerification.Data;
 using GradeVerification.Model;
 using GradeVerification.View.Admin;
+using GradeVerification.View.Admin.Windows;
+using GradeVerification.View.Encoder;
+using GradeVerification.View.Staff;
 using Microsoft.EntityFrameworkCore;
+using ToastNotifications;
+using ToastNotifications.Lifetime;
+using ToastNotifications.Messages;
+using ToastNotifications.Position;
 
 namespace GradeVerification.ViewModel
 {
     public class LoginViewModel : INotifyPropertyChanged
     {
+        private Notifier _notifier;
+
         private readonly ApplicationDbContext _dbContext;
 
         private string _username;
@@ -43,18 +52,44 @@ namespace GradeVerification.ViewModel
         }
 
         public ICommand LoginCommand { get; }
+        public ICommand ForgoPasstCommand { get; }
 
         public LoginViewModel(ApplicationDbContext dbContext)
         {
+
+            _notifier = new Notifier(cfg =>
+            {
+                cfg.PositionProvider = new PrimaryScreenPositionProvider(
+                    corner: Corner.BottomRight,
+                    offsetX: 10,
+                    offsetY: 10);
+
+                cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
+                    notificationLifetime: TimeSpan.FromSeconds(3),
+                    maximumNotificationCount: MaximumNotificationCount.FromCount(5));
+
+                cfg.Dispatcher = Application.Current.Dispatcher;
+            });
+
+
             _dbContext = dbContext;
             LoginCommand = new RelayCommand(async _ => await LoginAsync(), _ => !IsLoggingIn);
+            ForgoPasstCommand = new RelayCommand(ForgotPass);
+        }
+
+        private void ForgotPass(object parameter)
+        {
+            var forgotPassWindow = new ForgotPassword();
+            forgotPassWindow.DataContext = new ForgotPasswordViewModel(_dbContext);
+            forgotPassWindow.Show();
+            Application.Current.Windows.OfType<MainWindow>().FirstOrDefault()?.Close();
         }
 
         private async Task LoginAsync()
         {
             if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
             {
-                MessageBox.Show("Please enter both username and password.", "Login Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ShowErrorNotification("Please enter both username and password.");
                 return;
             }
 
@@ -71,25 +106,28 @@ namespace GradeVerification.ViewModel
                     // Check hashed password (assuming you're storing hashed passwords)
                     if (!VerifyPassword(Password, user.Password))
                     {
-                        MessageBox.Show("Invalid username or password.", "Login Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                        ShowErrorNotification("Invalid username or password.");
                         return;
                     }
 
                     // Welcome message
-                    MessageBox.Show($"Welcome, {user.FirstName}!", "Login Successful", MessageBoxButton.OK, MessageBoxImage.Information);
+                    ShowSuccessNotification("Login Successfully!");
 
                     // Redirect user based on role
                     switch (user.Role)
                     {
                         case "Admin":
-                            new AdminWindow(_dbContext).Show();
+                            // Pass the User object to the AdminWindow constructor
+                            new AdminWindow(_dbContext, user).Show();
                             break;
                         case "Staff":
+                            new StaffWindow(_dbContext, user).Show();
                             break;
                         case "Encoder":
+                            new EncoderWindow(_dbContext, user).Show();
                             break;
                         default:
-                            MessageBox.Show("Unauthorized role detected.", "Access Denied", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            ShowErrorNotification("Unauthorized role detected.");
                             return;
                     }
 
@@ -98,7 +136,7 @@ namespace GradeVerification.ViewModel
                 }
                 else
                 {
-                    MessageBox.Show("Invalid username or password.", "Login Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                    ShowErrorNotification("Invalid username or password.");
                 }
             }
             catch (Exception ex)
@@ -125,6 +163,16 @@ namespace GradeVerification.ViewModel
         protected void OnPropertyChanged([CallerMemberName] string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+
+        private void ShowSuccessNotification(string message)
+        {
+            _notifier.ShowSuccess(message);
+        }
+
+        private void ShowErrorNotification(string message)
+        {
+            _notifier.ShowError(message);
         }
     }
 }

@@ -10,13 +10,9 @@ namespace GradeVerification.View.Admin.Windows
 {
     public partial class AddUser : Window
     {
-        private readonly ApplicationDbContext _dbContext;
-
-        public AddUser(ApplicationDbContext dbContext)
+        public AddUser()
         {
             InitializeComponent();
-            _dbContext = dbContext;
-            this.DataContext = new AddUserViewModel(dbContext);
         }
 
         // Allows window to be moved by dragging the top border

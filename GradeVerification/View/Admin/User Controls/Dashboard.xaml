@@ -6,8 +6,9 @@
              xmlns:uc="clr-namespace:GradeVerification.View.Admin.User_Controls"
              xmlns:local="clr-namespace:GradeVerification.View.Admin.User_Controls"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
              mc:Ignorable="d" Name="AdminDashboard"
-             MinHeight="740" MinWidth="1030">
+             MinHeight="640" MinWidth="1030">
     <Border CornerRadius="0 10 10 0">
         <Border.Background>
             <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
@@ -32,7 +33,7 @@
             </StackPanel>
 
             <!-- Title -->
-            <TextBlock Text="Good Afternoon, Eran" FontSize="26" Foreground="#495057" HorizontalAlignment="Left" Margin="50 35 0 20"/>
+            <TextBlock Text="Welcome to Grade Verifcation System" FontSize="26" Foreground="#495057" HorizontalAlignment="Left" Margin="50 35 0 20"/>
 
             <!-- Info Cards -->
             <Grid Grid.Row="1" Margin="50 20 15 40">
@@ -42,13 +43,13 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <uc:InfoCard Grid.Column="0" Title="Students" Number="123,45" Icon="AccountStudent"
+                <uc:InfoCard Grid.Column="0" Title="Students" Number="{Binding StudentsCount}" Icon="AccountStudent"
                              Background1="#2ECC71" Background2="#58D68D" EllipseBackground1="#A9DFBF" EllipseBackground2="#D4EFDF" />
 
-                <uc:InfoCard Grid.Column="1" Title="Courses" Number="123,45" Icon="AccountStudent"
+                <uc:InfoCard Grid.Column="1" Title="Courses" Number="{Binding CoursesCount}" Icon="AccountStudent"
                              Background1="#28A745" Background2="#52BE80" EllipseBackground1="#A3E4D7" EllipseBackground2="#D1F2EB" />
 
-                <uc:InfoCard Grid.Column="2" Title="Program" Number="123,45" Icon="AccountStudent"
+                <uc:InfoCard Grid.Column="2" Title="Program" Number="{Binding ProgramsCount}" Icon="AccountStudent"
                              Background1="#239B56" Background2="#45B39D" EllipseBackground1="#A2D9CE" EllipseBackground2="#D0ECE7" />
             </Grid>
 
@@ -59,12 +60,19 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Chart Section -->
-                <Border CornerRadius="20" Padding="35 25" Background="#E9ECEF" Margin="50 0 10 40">
-
+                <Border CornerRadius="20" Padding="35 25" Background="White" Margin="50 0 10 40">
+                    <lvc:CartesianChart Series="{Binding SeriesCollection}" LegendLocation="Top">
+                        <lvc:CartesianChart.AxisX>
+                            <lvc:Axis Title="Month" Labels="{Binding Labels}"></lvc:Axis>
+                        </lvc:CartesianChart.AxisX>
+                        <lvc:CartesianChart.AxisY>
+                            <lvc:Axis Title="Students" LabelFormatter="{Binding Formatter}"></lvc:Axis>
+                        </lvc:CartesianChart.AxisY>
+                    </lvc:CartesianChart>
                 </Border>
 
                 <!-- Orders Section -->
-                <Border Grid.Column="1" CornerRadius="20" Padding="0 25" Background="#E9ECEF" Margin="15 0 47 40">
+                <Border Grid.Column="1" CornerRadius="20" Padding="0 25" Background="White" Margin="15 0 47 40">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="auto"/>
@@ -72,9 +80,8 @@
                         </Grid.RowDefinitions>
 
                         <StackPanel Orientation="Horizontal" Margin="20 0 0 15">
-
+                            <TextBlock Text="Recent Activity" FontSize="18" FontWeight="Bold" Foreground="#495057"/>
                         </StackPanel>
-
                     </Grid>
                 </Border>
             </Grid>

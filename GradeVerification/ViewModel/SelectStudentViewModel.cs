@@ -100,9 +100,15 @@ namespace GradeVerification.ViewModel
                 return;
             }
 
-            // Close the window
+            // Open the SelectSubject window and pass the selected student
+            var selectSubjectWindow = new SelectSubject();
+            selectSubjectWindow.DataContext = new SelectSubjectViewModel(SelectedStudent);
+            selectSubjectWindow.ShowDialog();
+
+            // Close the current window after subject selection
             Application.Current.Windows.OfType<SelectStudent>().FirstOrDefault()?.Close();
         }
+
 
         private void Cancel(object parameter)
         {

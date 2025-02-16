@@ -3,6 +3,7 @@ using GradeVerification.Data;
 using GradeVerification.Model;
 using GradeVerification.Service;
 using GradeVerification.View.Admin.Windows;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -11,14 +12,21 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using ToastNotifications;
+using ToastNotifications.Lifetime;
+using ToastNotifications.Messages;
+using ToastNotifications.Position;
 
 namespace GradeVerification.ViewModel
 {
     public class AddStudentViewModel : INotifyPropertyChanged
     {
+        private Notifier _notifier;
+
         private readonly AcademicProgramService _programService;
         private readonly ApplicationDbContext _context;
 
+        private string _studentId;
         private string _schoolId;
         private string _firstName;
         private string _lastName;
@@ -27,6 +35,13 @@ namespace GradeVerification.ViewModel
         private string _year;
         private string _programId;
         private string _status;
+
+
+        public string StudentId
+        {
+            get => _studentId;
+            set { _studentId = value; OnPropertyChanged(); }
+        }
 
         public string SchoolId
         {
@@ -84,8 +99,26 @@ namespace GradeVerification.ViewModel
         public ICommand SaveStudentCommand { get; }
         public ICommand BackCommand { get; }
 
-        public AddStudentViewModel()
+        private readonly Action _onUpdate;
+
+        public AddStudentViewModel(Action onUpdate)
         {
+            _notifier = new Notifier(cfg =>
+            {
+                cfg.PositionProvider = new PrimaryScreenPositionProvider(
+                    corner: Corner.BottomRight,
+                    offsetX: 10,
+                    offsetY: 10);
+
+                cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
+                    notificationLifetime: TimeSpan.FromSeconds(3),
+                    maximumNotificationCount: MaximumNotificationCount.FromCount(5));
+
+                cfg.Dispatcher = Application.Current.Dispatcher;
+            });
+
+            _onUpdate = onUpdate;
+
             _programService = new AcademicProgramService();
             _context = new ApplicationDbContext();
 
@@ -115,7 +148,8 @@ namespace GradeVerification.ViewModel
             try
             {
                 // Validate input fields
-                if (string.IsNullOrWhiteSpace(FirstName) ||
+                if (string.IsNullOrWhiteSpace(SchoolId) ||
+                    string.IsNullOrWhiteSpace(FirstName) ||
                     string.IsNullOrWhiteSpace(LastName) ||
                     string.IsNullOrWhiteSpace(Email) ||
                     string.IsNullOrWhiteSpace(Semester) ||
@@ -123,14 +157,14 @@ namespace GradeVerification.ViewModel
                     string.IsNullOrWhiteSpace(ProgramId) ||
                     string.IsNullOrWhiteSpace(Status))
                 {
-                    MessageBox.Show("Please fill in all fields.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    ShowErrorNotification("Please fill in all fields.");
                     return;
                 }
 
                 // Check for duplicate email
                 if (_context.Students.Any(s => s.Email == Email))
                 {
-                    MessageBox.Show("A student with this email already exists.", "Duplicate Entry", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    ShowErrorNotification("A student with this email already exists.");
                     return;
                 }
 
@@ -148,20 +182,26 @@ namespace GradeVerification.ViewModel
                 };
 
                 _context.Students.Add(newStudent);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(); // Save the student to generate the Id
 
-                // Enroll scholar students in subjects
+                // Assign subjects
                 if (Status.Equals("Scholar", StringComparison.OrdinalIgnoreCase))
                 {
-                    var subjectsToEnroll = _context.Subjects
-                        .Where(s => s.ProgramId == ProgramId && s.Year == Year && s.Semester == Semester)
-                        .ToList();
+                    var subjectsToEnroll = await _context.Subjects
+                        .Where(s => s.ProgramId == newStudent.ProgramId && s.Year == newStudent.Year && s.Semester == newStudent.Semester)
+                        .ToListAsync(); // Use ToListAsync for async operation
+
+                    if (subjectsToEnroll.Count == 0)
+                    {
+                        ShowErrorNotification("No subjects found for the selected program, year, and semester.");
+                        return;
+                    }
 
                     foreach (var subject in subjectsToEnroll)
                     {
                         var newGrade = new Grade
                         {
-                            StudentId = newStudent.Id, // Use the auto-generated Id
+                            StudentId = newStudent.Id, // Use the saved student ID
                             SubjectId = subject.SubjectId,
                             Score = null // Initially null until graded
                         };
@@ -169,33 +209,33 @@ namespace GradeVerification.ViewModel
                         _context.Grade.Add(newGrade);
                     }
 
-                    await _context.SaveChangesAsync();
+                    await _context.SaveChangesAsync(); // Save the grades
                 }
-
-                MessageBox.Show("Student saved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-
                 ClearForm();
                 LoadPrograms(); // Refresh UI
+
+                ShowSuccessNotification("Student saved successfully!");
+
+                _onUpdate?.Invoke(); // Notify main view to refresh UI
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error: {ex.InnerException?.Message ?? ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                _context.Dispose(); // Dispose the context to release resources
+                ShowErrorNotification("Error saving student.");
             }
         }
 
         private void ClearForm()
         {
+            StudentId = string.Empty;
+            SchoolId = string.Empty;
             FirstName = string.Empty;
             LastName = string.Empty;
             Email = string.Empty;
-            Semester = string.Empty;
-            Year = string.Empty;
-            ProgramId = string.Empty;
-            Status = string.Empty;
+            Semester = null;  // Reset to null instead of empty string for dropdowns
+            Year = null;
+            ProgramId = null;
+            Status = null;
         }
 
         private void Back(object parameter)
@@ -207,6 +247,16 @@ namespace GradeVerification.ViewModel
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        private void ShowSuccessNotification(string message)
+        {
+            _notifier.ShowSuccess(message);
+        }
+
+        private void ShowErrorNotification(string message)
+        {
+            _notifier.ShowError(message);
         }
     }
 }

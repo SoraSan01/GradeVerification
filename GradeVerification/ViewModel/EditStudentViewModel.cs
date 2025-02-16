@@ -10,11 +10,19 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
+using ToastNotifications;
+using ToastNotifications;
+using ToastNotifications.Lifetime;
+using ToastNotifications.Messages;
+using ToastNotifications.Position;
 
 namespace GradeVerification.ViewModel
 {
     public class EditStudentViewModel : INotifyPropertyChanged
     {
+        private Notifier _notifier;
+
+        private string _schoolId;
         private string _firstName;
         private string _lastName;
         private string _studentId;
@@ -32,14 +40,29 @@ namespace GradeVerification.ViewModel
 
         public EditStudentViewModel(Student student, EditStudent editWindow, Action onUpdate)
         {
+            _notifier = new Notifier(cfg =>
+            {
+                cfg.PositionProvider = new PrimaryScreenPositionProvider(
+                    corner: Corner.BottomRight,
+                    offsetX: 10,
+                    offsetY: 10);
+
+                cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
+                    notificationLifetime: TimeSpan.FromSeconds(3),
+                    maximumNotificationCount: MaximumNotificationCount.FromCount(5));
+
+                cfg.Dispatcher = Application.Current.Dispatcher;
+            });
+
             _editWindow = editWindow ?? throw new ArgumentNullException(nameof(editWindow));
             _onUpdate = onUpdate ?? throw new ArgumentNullException(nameof(onUpdate));
             _programService = new AcademicProgramService();
 
             // Initialize properties
+            SchoolId = student.SchoolId;
             FirstName = student.FirstName;
             LastName = student.LastName;
-            StudentId = student.SchoolId;
+            StudentId = student.Id;
             Email = student.Email;
             Semester = student.Semester;
             Year = student.Year;
@@ -60,6 +83,11 @@ namespace GradeVerification.ViewModel
         }
 
         // Properties with INotifyPropertyChanged
+        public string SchoolId
+        {
+            get => _schoolId;
+            set { _schoolId = value; OnPropertyChanged(); }
+        }
         public string FirstName
         {
             get => _firstName;
@@ -122,7 +150,7 @@ namespace GradeVerification.ViewModel
             {
                 using (var context = new ApplicationDbContext())
                 {
-                    var student = context.Students.FirstOrDefault(s => s.SchoolId == StudentId);
+                    var student = context.Students.FirstOrDefault(s => s.Id == StudentId);
 
                     if (student == null)
                     {
@@ -131,6 +159,7 @@ namespace GradeVerification.ViewModel
                     }
 
                     // Update student details
+                    student.SchoolId = SchoolId;
                     student.FirstName = FirstName;
                     student.LastName = LastName;
                     student.Email = Email;
@@ -140,7 +169,7 @@ namespace GradeVerification.ViewModel
                     student.Status = SelectedStatus;
 
                     context.SaveChanges();
-                    MessageBox.Show("Student information updated successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    ShowSuccessNotification("Student information updated successfully.");
                 }
 
                 _onUpdate?.Invoke();
@@ -149,9 +178,10 @@ namespace GradeVerification.ViewModel
             catch (Exception ex)
             {
                 MessageBox.Show($"An error occurred while updating student: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowErrorNotification("Error updating student.");
             }
         }
-
+            
         private void LoadData()
         {
             try
@@ -179,5 +209,15 @@ namespace GradeVerification.ViewModel
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+        private void ShowSuccessNotification(string message)
+        {
+            _notifier.ShowSuccess(message);
+        }
+
+        private void ShowErrorNotification(string message)
+        {
+            _notifier.ShowError(message);
+        }
+
     }
 }

@@ -103,13 +103,14 @@
                                       ItemsSource="{Binding Years}"
                                       SelectedItem="{Binding Year, UpdateSourceTrigger=PropertyChanged}"
                                       materialDesign:HintAssist.Hint="Select Year"/>
-                            
+
                             <ComboBox Grid.Row="5" Grid.Column="0" Margin="10"
                                       ItemsSource="{Binding ProgramList}"
                                       SelectedValue="{Binding ProgramId, UpdateSourceTrigger=PropertyChanged}"
-                                      DisplayMemberPath="ProgramName" SelectedValuePath="Id"
+                                      DisplayMemberPath="ProgramCode"
+                                      SelectedValuePath="Id"
                                       materialDesign:HintAssist.Hint="Select Program"/>
-                            
+
                             <ComboBox Grid.Row="5" Grid.Column="1" Margin="10"
                                       ItemsSource="{Binding Statuses}"
                                       SelectedItem="{Binding Status, UpdateSourceTrigger=PropertyChanged}"
