@@ -1,9 +1,8 @@
-﻿using Microsoft.Office.Interop.Word;
+﻿using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Wordprocessing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GradeVerification.Service
 {
@@ -11,56 +10,39 @@ namespace GradeVerification.Service
     {
         public static List<(string StudentName, string FinalGrade)> ParseDocumentContent(string filePath)
         {
-            var grades = new List<(string, string)>();
-            var app = new Application();
-            Document doc = null;
+            var grades = new List<(string StudentName, string FinalGrade)>();
 
-            try
+            using (WordprocessingDocument wordDoc = WordprocessingDocument.Open(filePath, false))
             {
-                doc = app.Documents.Open(filePath);
-                string fullText = doc.Content.Text;
-                var lines = fullText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                var tables = wordDoc.MainDocumentPart.Document.Body.Elements<Table>();
 
-                bool tableStarted = false;
-
-                foreach (var line in lines)
+                foreach (var table in tables)
                 {
-                    if (line.Contains("STUDENT'S NAME IN ALPHABETICAL ORDER"))
-                        tableStarted = true;
+                    var rows = table.Elements<TableRow>().Skip(2); // Skip header rows
 
-                    if (!tableStarted) continue;
-
-                    if (line.StartsWith("|") && char.IsDigit(line.Trim()[1]))
+                    foreach (var row in rows)
                     {
-                        var columns = line.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+                        var cells = row.Elements<TableCell>().ToList();
+                        if (cells.Count < 7) continue;
 
-                        if (columns.Length >= 7)
-                        {
-                            // Format: | 1 | ACEBEEDO, ABCDE CZARRINA ERIKA | 81 | 83 | 82 | 8 | 83 |
-                            var studentName = FormatName(columns[1].Trim());
-                            var finalGrade = columns[6].Trim();
+                        string studentName = FormatName(cells[1].InnerText.Trim());
+                        string finalGrade = cells[6].InnerText.Trim();
 
-                            // Handle "Inc." grade
-                            if (finalGrade.Equals("Inc.", StringComparison.OrdinalIgnoreCase))
-                                finalGrade = "INC";
+                        if (studentName.Equals("Nothing Follows", StringComparison.OrdinalIgnoreCase))
+                            continue;
 
-                            grades.Add((studentName, finalGrade));
-                        }
+                        finalGrade = finalGrade.Equals("Inc.", StringComparison.OrdinalIgnoreCase) ? "INC" : finalGrade;
+
+                        grades.Add((studentName, finalGrade));
                     }
                 }
+            }
 
-                return grades;
-            }
-            finally
-            {
-                doc?.Close();
-                app.Quit();
-            }
+            return grades;
         }
 
         private static string FormatName(string originalName)
         {
-            // Convert "LASTNAME, FIRSTNAME" to "FIRSTNAME LASTNAME"
             var parts = originalName.Split(new[] { ',' }, 2);
             return parts.Length == 2
                 ? $"{parts[1].Trim()} {parts[0].Trim()}"

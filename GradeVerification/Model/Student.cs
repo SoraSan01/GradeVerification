@@ -36,7 +36,7 @@ namespace GradeVerification.Model
         public string Semester { get; set; } // e.g., "1st Semester", "2nd Semester"
 
         [Required]
-        [MaxLength(10)]
+        [MaxLength(20)]
         public string Year { get; set; } // e.g., "1st Year", "2nd Year"
 
         [Required]

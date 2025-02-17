@@ -15,11 +15,9 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Forms;
 using System.Windows.Controls;
-using Xceed.Words.NET;
 
 namespace GradeVerification.ViewModel
 {
-    // UploadGradesViewModel.cs
     public class UploadGradesViewModel : INotifyPropertyChanged
     {
         private readonly ApplicationDbContext _context;
@@ -57,11 +55,11 @@ namespace GradeVerification.ViewModel
             return !IsProcessing;
         }
 
-        private void BrowseFile(object parameter)
+        private async void BrowseFile(object parameter)
         {
             var openFileDialog = new OpenFileDialog
             {
-                Filter = "Word Documents|*.doc;*.docx",
+                Filter = "Word Documents|*.docx", // DocX only supports .docx
                 Title = "Select grade document"
             };
 
@@ -72,19 +70,38 @@ namespace GradeVerification.ViewModel
 
                 try
                 {
+                    // Parse grades from document
                     var content = GradeDocumentParser.ParseDocumentContent(openFileDialog.FileName);
-                    ProcessGradesPreview(content);
+
+                    // Extract subject code from filename
+                    var fileName = Path.GetFileNameWithoutExtension(FilePath);
+                    var subjectCode = fileName.Replace("-", " ").Trim(); // Convert "IS-101" to "IS 101"
+
+                    // Fetch subject from database
+                    var subject = await _context.Subjects
+                        .FirstOrDefaultAsync(s => s.SubjectCode.ToLower() == subjectCode.ToLower());
+
+                    if (subject == null)
+                    {
+                        MessageBox.Show($"Subject '{subjectCode}' not found.", "Error",
+                            MessageBoxButton.OK, MessageBoxImage.Error);
+                        IsProcessing = false;
+                        return;
+                    }
+
+                    // Process grades with the retrieved SubjectId
+                    await ProcessGradesPreview(content, subject.SubjectId);
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Error: {ex.Message}", "Upload Error",
-                                    MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBoxButton.OK, MessageBoxImage.Error);
                     IsProcessing = false;
                 }
             }
         }
 
-        private async void ProcessGradesPreview(List<(string StudentName, string FinalGrade)> parsedGrades)
+        private async Task ProcessGradesPreview(List<(string StudentName, string FinalGrade)> parsedGrades, string subjectId)
         {
             try
             {
@@ -94,22 +111,35 @@ namespace GradeVerification.ViewModel
                 var students = await _context.Students
                     .ToDictionaryAsync(s => s.FullName);
 
+                var missingStudents = new List<string>();
+
                 foreach (var (studentName, finalGrade) in parsedGrades)
                 {
+                    if (studentName.Equals("Nothing Follows", StringComparison.OrdinalIgnoreCase))
+                        continue; // Skip placeholder rows
+
                     if (!students.TryGetValue(studentName, out var student))
                     {
-                        MessageBox.Show($"Student {studentName} not found");
+                        missingStudents.Add(studentName);
                         continue;
                     }
 
                     _pendingGrades.Add(new Grade
                     {
                         StudentId = student.Id,
-                        SubjectId = "IS-101", // Hardcode or extract from document
+                        SubjectId = subjectId, // Use dynamically retrieved SubjectId
                         Score = finalGrade
                     });
                 }
 
+                // Display warnings for missing students
+                if (missingStudents.Any())
+                {
+                    MessageBox.Show($"Missing students:\n{string.Join("\n", missingStudents)}",
+                        "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+
+                // Update UI with processed grades
                 Grades.Clear();
                 foreach (var grade in _pendingGrades)
                 {
