@@ -12,12 +12,16 @@ using ToastNotifications;
 using ToastNotifications.Lifetime;
 using ToastNotifications.Position;
 using ToastNotifications.Messages;
+using GradeVerification.Service;
 
 namespace GradeVerification.ViewModel
 {
     public class EditProgramViewModel : INotifyPropertyChanged, IDataErrorInfo
     {
         private Notifier _notifier;
+
+        private readonly ActivityLogService _activityLogService;
+
         private string _programCode;
         private string _programName;
 
@@ -80,6 +84,8 @@ namespace GradeVerification.ViewModel
 
         public EditProgramViewModel(AcademicProgram program, EditProgram editWindow, Action onUpdate)
         {
+            _activityLogService = new ActivityLogService();
+
             _notifier = new Notifier(cfg =>
             {
                 cfg.PositionProvider = new PrimaryScreenPositionProvider(
@@ -125,6 +131,11 @@ namespace GradeVerification.ViewModel
             }
 
             ShowSuccessNotification("Program Updated Successfully!");
+
+            string currentUsername = Environment.UserName;
+
+            _activityLogService.LogActivity("Program", "Edit", $"Program Edited by {currentUsername}");
+
             _onUpdate?.Invoke(); // Notify the main view to refresh.
             _editWindow.Close(); // Close the window after saving.
         }

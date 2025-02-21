@@ -104,6 +104,13 @@ namespace GradeVerification.View.Admin
             MainContentControl.Content = studentDashboard;
         }
 
+        private void btn_settings(object sender, RoutedEventArgs e)
+        {
+            SetActiveButton((Button)sender);
+            var settingDashboard = new SettingsDashboard();
+            MainContentControl.Content = settingDashboard;
+        }
+
         private void btn_logout(object sender, RoutedEventArgs e)
         {
             MessageBoxResult result = MessageBox.Show("Are you sure you want to log out?", "Logout", MessageBoxButton.YesNo, MessageBoxImage.Question);

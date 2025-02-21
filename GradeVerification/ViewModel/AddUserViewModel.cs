@@ -27,6 +27,7 @@ namespace GradeVerification.ViewModel
         private Notifier _notifier;
         private readonly ApplicationDbContext _dbContext;
         private readonly UserService _userService;
+        private readonly ActivityLogService _activityLogService;
         private readonly Action _onUpdate;
 
         private string _firstName;
@@ -43,6 +44,8 @@ namespace GradeVerification.ViewModel
         {
             _dbContext = dbContext;
             _onUpdate = onUpdate;
+
+            _activityLogService = new ActivityLogService();
 
             _notifier = new Notifier(cfg =>
             {
@@ -229,6 +232,11 @@ namespace GradeVerification.ViewModel
             if (userAdded)
             {
                 ShowSuccessNotification("User successfully added!");
+
+                string currentUsername = Environment.UserName;
+
+                _activityLogService.LogActivity("User", "Add", $"User added by {currentUsername}");
+
                 ClearFields();
                 _onUpdate?.Invoke();
             }

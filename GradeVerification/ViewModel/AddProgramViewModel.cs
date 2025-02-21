@@ -21,6 +21,7 @@ using ToastNotifications;
 using ToastNotifications.Lifetime;
 using ToastNotifications.Position;
 using ToastNotifications.Messages;
+using GradeVerification.Service;
 
 namespace GradeVerification.ViewModel
 {
@@ -29,6 +30,7 @@ namespace GradeVerification.ViewModel
 
         private Notifier _notifier;
         private readonly Action _onUpdate;
+        private readonly ActivityLogService _activityLogService;
 
         private string _programCode;
         private string _programName;
@@ -61,6 +63,8 @@ namespace GradeVerification.ViewModel
 
         public AddProgramViewModel(ApplicationDbContext dbContext, Action onUpdate)
         {
+            _activityLogService = new ActivityLogService();
+
             _notifier = new Notifier(cfg =>
             {
                 cfg.PositionProvider = new PrimaryScreenPositionProvider(
@@ -131,6 +135,10 @@ namespace GradeVerification.ViewModel
                     // Save to database
                     context.AcademicPrograms.Add(program);
                     context.SaveChanges();
+
+                    string currentUsername = Environment.UserName;
+
+                    _activityLogService.LogActivity("Program", $"Program Added by {currentUsername}", "Book");
                 }
 
                 ShowSuccessNotification("Program Saved!");

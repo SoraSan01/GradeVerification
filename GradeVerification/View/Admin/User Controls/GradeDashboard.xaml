@@ -151,13 +151,6 @@
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                        <!-- Grade Entry Button -->
-                                        <Button Style="{StaticResource GradeEntryButton}" 
-                                                Command="{Binding DataContext.InputGradeCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                CommandParameter="{Binding}" Margin="5">
-                                            <materialDesign:PackIcon Kind="Input"/>
-                                        </Button>
-
                                         <!-- Delete Button -->
                                         <Button Style="{StaticResource gridRemoveButton}" 
                                                 Command="{Binding DataContext.DeleteGradeCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"

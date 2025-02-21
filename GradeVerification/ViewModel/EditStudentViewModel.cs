@@ -21,6 +21,7 @@ namespace GradeVerification.ViewModel
     public class EditStudentViewModel : INotifyPropertyChanged
     {
         private Notifier _notifier;
+        private readonly ActivityLogService _activityLogService;
 
         private string _schoolId;
         private string _firstName;
@@ -40,6 +41,8 @@ namespace GradeVerification.ViewModel
 
         public EditStudentViewModel(Student student, EditStudent editWindow, Action onUpdate)
         {
+            _activityLogService = new ActivityLogService();
+
             _notifier = new Notifier(cfg =>
             {
                 cfg.PositionProvider = new PrimaryScreenPositionProvider(
@@ -170,6 +173,11 @@ namespace GradeVerification.ViewModel
 
                     context.SaveChanges();
                     ShowSuccessNotification("Student information updated successfully.");
+
+                    string currentUsername = Environment.UserName;
+
+                    _activityLogService.LogActivity("Student", $"Student Edit by {currentUsername}", "Student");
+
                 }
 
                 _onUpdate?.Invoke();

@@ -27,6 +27,9 @@ namespace GradeVerification.ViewModel
         private readonly AcademicProgramService _programService;
         private readonly ApplicationDbContext _context;
 
+        private readonly ActivityLogService _activityLogService;
+
+
         private string _studentId;
         private string _schoolId;
         private string _firstName;
@@ -109,6 +112,9 @@ namespace GradeVerification.ViewModel
 
         public AddStudentViewModel(Action onUpdate)
         {
+
+            _activityLogService = new ActivityLogService();
+
             _notifier = new Notifier(cfg =>
             {
                 cfg.PositionProvider = new PrimaryScreenPositionProvider(
@@ -252,6 +258,11 @@ namespace GradeVerification.ViewModel
                 ClearForm();
                 LoadPrograms(); // Refresh program list if needed
                 ShowSuccessNotification("Student saved successfully!");
+
+                string currentUsername = Environment.UserName;
+
+                _activityLogService.LogActivity("Student", "Add", $"Student added by {currentUsername}");
+
                 _onUpdate?.Invoke(); // Notify main view to refresh UI
             }
             catch (Exception ex)

@@ -125,6 +125,13 @@
                         </StackPanel>
                     </Button>
 
+                    <Button Style="{StaticResource menuButton}" Click="btn_settings">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Settings" Style="{StaticResource menuButtonIcon}"/>
+                            <TextBlock Text="Settings" Style="{StaticResource menuButtonText}"/>
+                        </StackPanel>
+                    </Button>
+
                     <Button Style="{StaticResource menuButton}" Click="btn_logout">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="Logout" Style="{StaticResource menuButtonIcon}"/>

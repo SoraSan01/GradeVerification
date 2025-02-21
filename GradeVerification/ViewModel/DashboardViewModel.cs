@@ -16,27 +16,32 @@ namespace GradeVerification.ViewModel
         private readonly IRepository<Subject> _subjectRepository;
         private readonly IRepository<AcademicProgram> _programRepository;
 
-        private string _studentsCount;
-        private string _coursesCount;
-        private string _programsCount;
+        private int _studentsCount;
+        private int _coursesCount;
+        private int _programsCount;
 
-        public string StudentsCount
+        public int StudentsCount
         {
             get => _studentsCount;
-            set { _studentsCount = value; OnPropertyChanged(); }
+            set { _studentsCount = value; OnPropertyChanged(); OnPropertyChanged(nameof(StudentsCountDisplay)); }
         }
 
-        public string CoursesCount
+        public int CoursesCount
         {
             get => _coursesCount;
-            set { _coursesCount = value; OnPropertyChanged(); }
+            set { _coursesCount = value; OnPropertyChanged(); OnPropertyChanged(nameof(CoursesCountDisplay)); }
         }
 
-        public string ProgramsCount
+        public int ProgramsCount
         {
             get => _programsCount;
-            set { _programsCount = value; OnPropertyChanged(); }
+            set { _programsCount = value; OnPropertyChanged(); OnPropertyChanged(nameof(ProgramsCountDisplay)); }
         }
+
+        // These properties format the integer counts as strings for display.
+        public string StudentsCountDisplay => StudentsCount.ToString();
+        public string CoursesCountDisplay => CoursesCount.ToString();
+        public string ProgramsCountDisplay => ProgramsCount.ToString();
 
         public SeriesCollection SeriesCollection { get; set; }
         public string[] Labels { get; set; }
@@ -48,9 +53,7 @@ namespace GradeVerification.ViewModel
             _subjectRepository = subjectRepo;
             _programRepository = programRepo;
 
-            LoadDataAsync();
-
-            // Initialize chart data with Students, Programs, and Subjects
+            // Initialize chart data with dummy values; replace with real data as needed.
             SeriesCollection = new SeriesCollection
             {
                 new LineSeries
@@ -84,19 +87,35 @@ namespace GradeVerification.ViewModel
 
             Labels = new[] { "Jan", "Feb", "Mar", "Apr", "May", "Jun" };
             Formatter = value => value.ToString("N");
+
+            // Load data asynchronously; fire and forget.
+            _ = LoadDataAsync();
         }
 
-        private async void LoadDataAsync()
+        private async Task LoadDataAsync()
         {
-            StudentsCount = (await _studentRepository.GetCountAsync()).ToString();
-            CoursesCount = (await _subjectRepository.GetCountAsync()).ToString();
-            ProgramsCount = (await _programRepository.GetCountAsync()).ToString();
+            try
+            {
+                // Fetch counts concurrently.
+                var studentCountTask = _studentRepository.GetCountAsync();
+                var courseCountTask = _subjectRepository.GetCountAsync();
+                var programCountTask = _programRepository.GetCountAsync();
+
+                await Task.WhenAll(studentCountTask, courseCountTask, programCountTask);
+
+                StudentsCount = studentCountTask.Result;
+                CoursesCount = courseCountTask.Result;
+                ProgramsCount = programCountTask.Result;
+            }
+            catch (Exception ex)
+            {
+                // Log the error (or show a message as needed).
+                System.Diagnostics.Debug.WriteLine("Error loading dashboard data: " + ex.Message);
+            }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
     }
 }

@@ -24,6 +24,8 @@ public class AddSubjectViewModel : INotifyPropertyChanged, IDataErrorInfo
     private readonly AcademicProgramService _programService;
     private readonly ApplicationDbContext _context;
 
+    private readonly ActivityLogService _activityLogService;
+
     private string _subjectCode;
     private string _subjectName;
     private int _units;
@@ -37,6 +39,8 @@ public class AddSubjectViewModel : INotifyPropertyChanged, IDataErrorInfo
 
     public AddSubjectViewModel(ApplicationDbContext dbContext, Action onUpdate)
     {
+        _activityLogService = new ActivityLogService();
+
         _notifier = new Notifier(cfg =>
         {
             cfg.PositionProvider = new PrimaryScreenPositionProvider(
@@ -198,6 +202,11 @@ public class AddSubjectViewModel : INotifyPropertyChanged, IDataErrorInfo
             await _context.SaveChangesAsync();
 
             ShowSuccessNotification("Successfully added the subject!");
+
+            string currentUsername = Environment.UserName;
+
+            _activityLogService.LogActivity("Subject", "Add", $"Subject added by {currentUsername}");
+
             _onUpdate?.Invoke();
         }
         catch (Exception ex)
