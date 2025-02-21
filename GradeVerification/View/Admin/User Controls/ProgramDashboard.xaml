@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:GradeVerification.View.Admin.User_Controls"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d" 
-             MinHeight="640" MinWidth="1030">
+             MinHeight="600" MinWidth="1030">
     <Border CornerRadius="0 10 10 0" Background="#FAFAFA">
         <Grid>
             <Grid.RowDefinitions>
@@ -14,12 +14,11 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- Top Panel with Search, Filters, and Add Button -->
-            <Border Background="#FFFFFF" CornerRadius="10" Margin="20" Padding="15">
+            <!-- Top Panel with Search and Add Button -->
+            <Border Background="White" CornerRadius="10" Margin="20" Padding="15">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="2*"/>
-                        <ColumnDefinition Width="1.5*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
@@ -33,52 +32,67 @@
                     <!-- Add Program Button -->
                     <Button Content="Add Program" Height="40" Padding="20,0" Background="#28A745"
                             Foreground="White" FontSize="14" FontWeight="SemiBold" 
-                            BorderBrush="Transparent" BorderThickness="0" Cursor="Hand" 
+                            BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
                             materialDesign:ButtonAssist.CornerRadius="8"
-                            Grid.Column="2" Command="{Binding AddProgramCommand}"/>
+                            Grid.Column="1" Command="{Binding AddProgramCommand}"/>
                 </Grid>
             </Border>
 
             <!-- Program Data Table -->
-            <Border Grid.Row="1" Background="#FFFFFF" CornerRadius="10" Margin="20" Padding="0">
-                <DataGrid Name="dgPrograms" Style="{StaticResource DataGridStyle1}"
-                          RowStyle="{DynamicResource DataGridRowStyle1}"
-                          ColumnHeaderStyle="{DynamicResource DataGridColumnHeaderStyle1}"
-                          CellStyle="{DynamicResource DataGridCellStyle1}"
-                          ItemsSource="{Binding Programs}">
+            <Border Grid.Row="1" Background="White" CornerRadius="10" Margin="20" Padding="0">
+                <Grid>
+                    <DataGrid Name="dgPrograms" ItemsSource="{Binding Programs}" 
+                              Style="{StaticResource DataGridStyle1}"
+                              RowStyle="{DynamicResource DataGridRowStyle1}"
+                              ColumnHeaderStyle="{DynamicResource DataGridColumnHeaderStyle1}"
+                              CellStyle="{DynamicResource DataGridCellStyle1}"
+                              AutoGenerateColumns="False">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="*"/>
+                            <DataGridTextColumn Header="Program Code" Binding="{Binding ProgramCode}" Width="200"/>
+                            <DataGridTemplateColumn Header="Program Name" Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding ProgramName}" TextWrapping="Wrap" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <!-- Actions Column -->
+                            <DataGridTemplateColumn Header="Actions" Width="150">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <Button Style="{StaticResource gridEditButton}" Cursor="Hand" 
+                                                    Command="{Binding DataContext.EditProgramCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                    CommandParameter="{Binding}">
+                                                <materialDesign:PackIcon Kind="Edit"/>
+                                            </Button>
+                                            <Button Style="{StaticResource gridRemoveButton}" Cursor="Hand" 
+                                                    Command="{Binding DataContext.DeleteProgramCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}">
+                                                <materialDesign:PackIcon Kind="Delete"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
 
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="*"/>
-                        <DataGridTextColumn Header="Program Code" Binding="{Binding ProgramCode}" Width="200"/>
-
-                        <DataGridTemplateColumn Header="Program Name" Width="*">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding ProgramName}" TextWrapping="Wrap" />
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-
-                        <!-- Actions Column -->
-                        <DataGridTemplateColumn Header="Actions" Width="150">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                        <Button Style="{StaticResource gridEditButton}" Cursor="Hand" Command="{Binding DataContext.EditProgramCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                                CommandParameter="{Binding}">
-                                            <materialDesign:PackIcon Kind="Edit"/>
-                                        </Button>
-
-                                        <Button Style="{StaticResource gridRemoveButton}" Cursor="Hand" Command="{Binding DataContext.DeleteProgramCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}">
-                                            <materialDesign:PackIcon Kind="Delete"/>
-                                        </Button>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                    </DataGrid.Columns>
-                </DataGrid>
+                    <!-- "No programs found" message -->
+                    <TextBlock Text="No programs found." FontSize="16" FontWeight="Bold" Foreground="Gray" 
+                               HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Programs.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
             </Border>
         </Grid>
     </Border>

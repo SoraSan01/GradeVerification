@@ -6,7 +6,8 @@
         xmlns:local="clr-namespace:GradeVerification"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:local1="clr-namespace:GradeVerification.ViewModel" 
-        mc:Ignorable="d" Style="{StaticResource MaterialDesignWindow}"
+        mc:Ignorable="d" 
+        Style="{StaticResource MaterialDesignWindow}"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         FontFamily="{materialDesign:MaterialDesignFont}"
         Background="{x:Null}"
@@ -14,11 +15,10 @@
         WindowStartupLocation="CenterScreen"
         Title="MainWindow" Height="800" Width="500">
 
-    <materialDesign:Card UniformCornerRadius="20" Background="White" Margin="30">
+    <materialDesign:Card UniformCornerRadius="20" Background="White" Margin="30" MouseDown="Card_MouseDown">
         <materialDesign:DialogHost CloseOnClickAway="True" x:Name="DialogHost">
             <StackPanel Margin="20">
-
-                <!-- PopupBox with Help, Forgot Password, and Exit buttons -->
+                <!-- PopupBox for exit (or additional options) -->
                 <materialDesign:PopupBox HorizontalAlignment="Right" Margin="0 10 10 0"
                                          PlacementMode="BottomAndAlignRightEdges" StaysOpen="False" 
                                          Height="30">
@@ -40,7 +40,7 @@
                 <TextBox Margin="0 10" Width="350" FontSize="18" BorderThickness="2"
                          BorderBrush="{DynamicResource MaterialDesignDivider}"
                          Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                         Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}">
+                         Text="{Binding Username, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}">
                     <materialDesign:HintAssist.Hint>
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Height="20" Width="20" Kind="User" VerticalAlignment="Center" Margin="0 0 10 0"/>
@@ -62,13 +62,14 @@
                     </materialDesign:HintAssist.Hint>
                 </PasswordBox>
 
-
                 <!-- Login Button -->
                 <Button Margin="0 20 0 0" Style="{StaticResource MaterialDesignFlatMidBgButton}"
                         materialDesign:ShadowAssist.Darken="True" Height="55" Width="350"
                         materialDesign:ButtonAssist.CornerRadius="10"
                         FontSize="18" Content="Log In" Foreground="White"
                         Command="{Binding LoginCommand}"/>
+
+                <!-- Forgot Password Button -->
                 <Button Margin="0 20" Style="{StaticResource MaterialDesignFlatButton}"
                         materialDesign:ShadowAssist.Darken="True" Height="55" Width="350"
                         materialDesign:ButtonAssist.CornerRadius="10"

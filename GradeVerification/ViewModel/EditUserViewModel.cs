@@ -3,33 +3,67 @@ using GradeVerification.Data;
 using GradeVerification.Model;
 using GradeVerification.View.Admin.Windows;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Data;
+using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Runtime.Intrinsics.Arm;
 using System.Windows;
 using System.Windows.Input;
 using ToastNotifications;
-using ToastNotifications.Core;
 using ToastNotifications.Lifetime;
 using ToastNotifications.Messages;
 using ToastNotifications.Position;
 
 namespace GradeVerification.ViewModel
 {
-    public class EditUserViewModel : INotifyPropertyChanged
+    public class EditUserViewModel : INotifyPropertyChanged, IDataErrorInfo
     {
         private Notifier _notifier;
         private readonly Action _onUpdate;
-
-        private User _user;
         private readonly ApplicationDbContext _dbContext;
 
-        public User User
+        // Backing fields for editable properties.
+        private string _firstName;
+        private string _lastName;
+        private string _username;
+        private string _email;
+        private string _password;
+        private string _role;
+
+        // The ID of the user being edited.
+        public string Id { get; set; }
+
+        public string FirstName
         {
-            get => _user;
-            set { _user = value; OnPropertyChanged(); }
+            get => _firstName;
+            set { _firstName = value; OnPropertyChanged(); }
+        }
+        public string LastName
+        {
+            get => _lastName;
+            set { _lastName = value; OnPropertyChanged(); }
+        }
+        public string Username
+        {
+            get => _username;
+            set { _username = value; OnPropertyChanged(); }
+        }
+        public string Email
+        {
+            get => _email;
+            set { _email = value; OnPropertyChanged(); }
+        }
+        // Note: In a real application, you might not want to show or edit the password in plain text.
+        public string Password
+        {
+            get => _password;
+            set { _password = value; OnPropertyChanged(); }
+        }
+        public string Role
+        {
+            get => _role;
+            set { _role = value; OnPropertyChanged(); }
         }
 
         public ObservableCollection<string> Roles { get; set; }
@@ -39,70 +73,120 @@ namespace GradeVerification.ViewModel
 
         public EditUserViewModel(User user, ApplicationDbContext dbContext, Action onUpdate)
         {
-            _onUpdate = onUpdate;
+            _onUpdate = onUpdate ?? throw new ArgumentNullException(nameof(onUpdate));
+            _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
 
+            // Initialize notifier.
             _notifier = new Notifier(cfg =>
             {
                 cfg.PositionProvider = new PrimaryScreenPositionProvider(
                     corner: Corner.BottomRight,
                     offsetX: 10,
                     offsetY: 10);
-
                 cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
                     notificationLifetime: TimeSpan.FromSeconds(3),
                     maximumNotificationCount: MaximumNotificationCount.FromCount(5));
-
                 cfg.Dispatcher = Application.Current.Dispatcher;
             });
 
-            _user = user;
-            _dbContext = dbContext;
-            SaveCommand = new RelayCommand(Save);
-            CancelCommand = new RelayCommand(Cancel);
+            // Initialize view model properties from the existing user.
+            Id = user.Id;
+            FirstName = user.FirstName;
+            LastName = user.LastName;
+            Username = user.Username;
+            Email = user.Email;
+            Password = user.Password;
+            Role = user.Role;
 
             Roles = new ObservableCollection<string> { "Admin", "Encoder", "Staff" };
+
+            // Create commands. SaveCommand uses a CanExecute predicate that checks for validation errors.
+            SaveCommand = new RelayCommand(Save, _ => !HasErrors);
+            CancelCommand = new RelayCommand(Cancel);
         }
+
+        #region IDataErrorInfo Implementation
+
+        public string Error => null;
+
+        public string this[string columnName]
+        {
+            get
+            {
+                string result = null;
+                switch (columnName)
+                {
+                    case nameof(FirstName):
+                        if (string.IsNullOrWhiteSpace(FirstName))
+                            result = "First Name is required.";
+                        break;
+                    case nameof(LastName):
+                        if (string.IsNullOrWhiteSpace(LastName))
+                            result = "Last Name is required.";
+                        break;
+                    case nameof(Username):
+                        if (string.IsNullOrWhiteSpace(Username))
+                            result = "Username is required.";
+                        break;
+                    case nameof(Email):
+                        if (string.IsNullOrWhiteSpace(Email))
+                            result = "Email is required.";
+                        else if (!Email.Contains("@"))
+                            result = "Please provide a valid email address.";
+                        break;
+                    case nameof(Password):
+                        if (string.IsNullOrWhiteSpace(Password))
+                            result = "Password is required.";
+                        else if (Password.Length < 6)
+                            result = "Password must be at least 6 characters long.";
+                        break;
+                    case nameof(Role):
+                        if (string.IsNullOrWhiteSpace(Role))
+                            result = "Role must be selected.";
+                        break;
+                }
+                return result;
+            }
+        }
+
+        // Helper property that returns true if any property has a validation error.
+        public bool HasErrors =>
+            this[nameof(FirstName)] != null ||
+            this[nameof(LastName)] != null ||
+            this[nameof(Username)] != null ||
+            this[nameof(Email)] != null ||
+            this[nameof(Password)] != null ||
+            this[nameof(Role)] != null;
+
+        #endregion
 
         private void Save(object parameter)
         {
-            // Validate inputs
-            if (string.IsNullOrWhiteSpace(User.FirstName))
+            if (HasErrors)
             {
-                ShowErrorNotification("First Name is required.");
+                ShowErrorNotification("Please correct the errors before saving.");
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(User.LastName))
-            {
-                ShowErrorNotification("Last Name is required.");
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(User.Username))
-            {
-                ShowErrorNotification("Username is required.");
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(User.Email) || !User.Email.Contains("@"))
-            {
-                ShowErrorNotification("Please provide a valid email address.");
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(User.Password) || User.Password.Length < 6)
-            {
-                ShowErrorNotification("Password must be at least 6 characters long.");
-                return;
-            }
-
-            // Save changes to the database
             try
             {
+                // Retrieve the user from the database and update properties.
+                var userToUpdate = _dbContext.Users.Find(Id);
+                if (userToUpdate == null)
+                {
+                    ShowErrorNotification("User not found.");
+                    return;
+                }
+                userToUpdate.FirstName = FirstName;
+                userToUpdate.LastName = LastName;
+                userToUpdate.Username = Username;
+                userToUpdate.Email = Email;
+                userToUpdate.Password = Password;
+                userToUpdate.Role = Role;
+
                 _dbContext.SaveChanges();
                 ShowSuccessNotification("User successfully saved.");
                 _onUpdate?.Invoke();
-                // Close the window
                 Application.Current.Windows.OfType<EditUser>().FirstOrDefault()?.Close();
             }
             catch (Exception ex)
@@ -113,7 +197,6 @@ namespace GradeVerification.ViewModel
 
         private void Cancel(object parameter)
         {
-            // Close the window without saving
             Application.Current.Windows.OfType<EditUser>().FirstOrDefault()?.Close();
         }
 
@@ -121,6 +204,8 @@ namespace GradeVerification.ViewModel
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            // Refresh the Save command's state.
+            (SaveCommand as RelayCommand)?.RaiseCanExecuteChanged();
         }
 
         private void ShowSuccessNotification(string message)

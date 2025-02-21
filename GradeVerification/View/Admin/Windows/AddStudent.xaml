@@ -4,8 +4,11 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" WindowStyle="None" WindowStartupLocation="CenterScreen"
-        AllowsTransparency="True" Background="Transparent"
+        mc:Ignorable="d" 
+        WindowStyle="None" 
+        WindowStartupLocation="CenterScreen"
+        AllowsTransparency="True" 
+        Background="Transparent"
         Title="AddStudent" Height="550" Width="750">
 
     <Border CornerRadius="5" Background="#ffffff" MouseDown="Border_MouseDown">
@@ -79,44 +82,45 @@
                             </StackPanel>
                             <Separator Grid.Row="1" Grid.ColumnSpan="2" Height="1" Background="#e1e6eb"/>
 
-                            <!-- Inputs with Bindings -->
+                            <!-- First and Last Name -->
                             <TextBox Grid.Row="2" Grid.Column="0" Margin="10"
-                                     Text="{Binding FirstName, UpdateSourceTrigger=PropertyChanged}"
+                                     Text="{Binding FirstName, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
                                      materialDesign:HintAssist.Hint="First Name"/>
                             <TextBox Grid.Row="2" Grid.Column="1" Margin="10"
-                                     Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged}"
+                                     Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
                                      materialDesign:HintAssist.Hint="Last Name"/>
 
+                            <!-- Student ID and Email -->
                             <TextBox Grid.Row="3" Grid.Column="0" Margin="10"
-                                     Text="{Binding SchoolId, UpdateSourceTrigger=PropertyChanged}"
+                                     Text="{Binding SchoolId, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
                                      materialDesign:HintAssist.Hint="Student ID"/>
                             <TextBox Grid.Row="3" Grid.Column="1" Margin="10"
-                                     Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}"
+                                     Text="{Binding Email, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
                                      materialDesign:HintAssist.Hint="Email"/>
 
+                            <!-- Semester and Year -->
                             <ComboBox Grid.Row="4" Grid.Column="0" Margin="10"
                                       ItemsSource="{Binding Semesters}"
-                                      SelectedItem="{Binding Semester, UpdateSourceTrigger=PropertyChanged}"
+                                      SelectedItem="{Binding Semester, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
                                       materialDesign:HintAssist.Hint="Select Semester"/>
-                            
                             <ComboBox Grid.Row="4" Grid.Column="1" Margin="10"
                                       ItemsSource="{Binding Years}"
-                                      SelectedItem="{Binding Year, UpdateSourceTrigger=PropertyChanged}"
+                                      SelectedItem="{Binding Year, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
                                       materialDesign:HintAssist.Hint="Select Year"/>
 
+                            <!-- Program and Status -->
                             <ComboBox Grid.Row="5" Grid.Column="0" Margin="10"
                                       ItemsSource="{Binding ProgramList}"
-                                      SelectedValue="{Binding ProgramId, UpdateSourceTrigger=PropertyChanged}"
+                                      SelectedValue="{Binding ProgramId, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
                                       DisplayMemberPath="ProgramCode"
                                       SelectedValuePath="Id"
                                       materialDesign:HintAssist.Hint="Select Program"/>
-
                             <ComboBox Grid.Row="5" Grid.Column="1" Margin="10"
                                       ItemsSource="{Binding Statuses}"
-                                      SelectedItem="{Binding Status, UpdateSourceTrigger=PropertyChanged}"
+                                      SelectedItem="{Binding Status, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
                                       materialDesign:HintAssist.Hint="Select Status"/>
 
-
+                            <!-- Buttons -->
                             <StackPanel Grid.Row="6" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="20">
                                 <Button Content="Back" Width="100" Command="{Binding BackCommand}"
                                         Style="{StaticResource secondaryButton}"/>

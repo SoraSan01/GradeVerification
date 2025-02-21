@@ -37,9 +37,6 @@ namespace GradeVerification.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Student>()
-                .HasIndex(s => s.SchoolId)
-                .IsUnique();
 
             modelBuilder.Entity<Subject>()
                 .HasOne(s => s.AcademicProgram)

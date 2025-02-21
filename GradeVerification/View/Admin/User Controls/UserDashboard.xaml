@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:GradeVerification.View.Admin.User_Controls"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d" 
-             MinHeight="640" MinWidth="1030">
+             MinHeight="600" MinWidth="1030">
     <Border CornerRadius="0 10 10 0" Background="#FAFAFA">
         <Grid>
             <Grid.RowDefinitions>
@@ -54,27 +54,29 @@
                           RowStyle="{DynamicResource DataGridRowStyle1}"
                           ColumnHeaderStyle="{DynamicResource DataGridColumnHeaderStyle1}"
                           CellStyle="{DynamicResource DataGridCellStyle1}"
-                          ItemsSource="{Binding Users}">
-                    
+                          ItemsSource="{Binding UsersView}">
+
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="User ID" Binding="{Binding Id}" Width="100"/>
                         <DataGridTextColumn Header="Name" Binding="{Binding FullName}" Width="*"/>
                         <DataGridTextColumn Header="Username" Binding="{Binding Username}" Width="*"/>
                         <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="150"/>
                         <DataGridTextColumn Header="Role" Binding="{Binding Role}" Width="150"/>
-                        
+
                         <!-- Actions Column -->
                         <DataGridTemplateColumn Header="Actions" Width="150">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
 
-                                        <Button Style="{StaticResource gridEditButton}" Cursor="Hand" Command="{Binding DataContext.EditUserCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                        <Button Style="{StaticResource gridEditButton}" Cursor="Hand" 
+                                                Command="{Binding DataContext.EditUserCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
                                                 CommandParameter="{Binding}">
                                             <materialDesign:PackIcon Kind="Edit"/>
                                         </Button>
 
-                                        <Button Style="{StaticResource gridRemoveButton}" Cursor="Hand" Command="{Binding DataContext.DeleteUserCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        <Button Style="{StaticResource gridRemoveButton}" Cursor="Hand" 
+                                                Command="{Binding DataContext.DeleteUserCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                 CommandParameter="{Binding}">
                                             <materialDesign:PackIcon Kind="Delete"/>
                                         </Button>

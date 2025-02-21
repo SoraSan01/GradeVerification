@@ -2,18 +2,21 @@
 using GradeVerification.Data;
 using GradeVerification.Model;
 using GradeVerification.Service;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Windows.Input;
+using System.Threading.Tasks;
 using System.Windows;
-using GradeVerification.View.Admin.Windows;
+using System.Windows.Input;
 using ToastNotifications;
 using ToastNotifications.Lifetime;
 using ToastNotifications.Position;
 using ToastNotifications.Messages;
+using GradeVerification.View.Admin.Windows;
 
-public class AddSubjectViewModel : INotifyPropertyChanged
+public class AddSubjectViewModel : INotifyPropertyChanged, IDataErrorInfo
 {
     private Notifier _notifier;
     private readonly Action _onUpdate;
@@ -121,13 +124,59 @@ public class AddSubjectViewModel : INotifyPropertyChanged
         set { _schedule = value; OnPropertyChanged(); }
     }
 
-
     public ObservableCollection<string> YearList { get; }
     public ObservableCollection<AcademicProgram> ProgramList { get; }
     public ObservableCollection<string> SemesterList { get; }
 
     public ICommand SaveSubjectCommand { get; }
     public ICommand CancelCommand { get; }
+
+    // IDataErrorInfo implementation for validation
+    public string Error => null;
+
+    public string this[string columnName]
+    {
+        get
+        {
+            string error = null;
+            switch (columnName)
+            {
+                case nameof(SubjectCode):
+                    if (string.IsNullOrWhiteSpace(SubjectCode))
+                        error = "Subject Code is required.";
+                    break;
+                case nameof(SubjectName):
+                    if (string.IsNullOrWhiteSpace(SubjectName))
+                        error = "Subject Name is required.";
+                    break;
+                case nameof(Units):
+                    if (Units <= 0)
+                        error = "Units must be greater than zero.";
+                    break;
+                case nameof(SelectedYear):
+                    if (string.IsNullOrWhiteSpace(SelectedYear))
+                        error = "Year selection is required.";
+                    break;
+                case nameof(SelectedProgramID):
+                    if (string.IsNullOrWhiteSpace(SelectedProgramID))
+                        error = "Program selection is required.";
+                    break;
+                case nameof(SelectedSemester):
+                    if (string.IsNullOrWhiteSpace(SelectedSemester))
+                        error = "Semester selection is required.";
+                    break;
+                case nameof(ProfessorName):
+                    if (string.IsNullOrWhiteSpace(ProfessorName))
+                        error = "Professor Name is required.";
+                    break;
+                case nameof(Schedule):
+                    if (string.IsNullOrWhiteSpace(Schedule))
+                        error = "Schedule is required.";
+                    break;
+            }
+            return error;
+        }
+    }
 
     private async Task SaveSubject()
     {
@@ -148,8 +197,7 @@ public class AddSubjectViewModel : INotifyPropertyChanged
             _context.Subjects.Add(newSubject);
             await _context.SaveChangesAsync();
 
-            ShowSuccessNotification("Succesfully A Added Subject!");
-
+            ShowSuccessNotification("Successfully added the subject!");
             _onUpdate?.Invoke();
         }
         catch (Exception ex)
@@ -165,19 +213,21 @@ public class AddSubjectViewModel : INotifyPropertyChanged
 
     private bool CanSaveSubject()
     {
-        return !string.IsNullOrEmpty(SubjectCode) &&
-               !string.IsNullOrEmpty(SubjectName) &&
-               Units > 0 &&
-               !string.IsNullOrEmpty(SelectedYear) &&
-               !string.IsNullOrEmpty(SelectedProgramID) &&
-               !string.IsNullOrEmpty(SelectedSemester) &&
-               !string.IsNullOrEmpty(ProfessorName) &&
-               !string.IsNullOrEmpty(Schedule);
+        // Ensure all fields are valid (i.e. no validation errors exist)
+        return string.IsNullOrEmpty(this[nameof(SubjectCode)]) &&
+               string.IsNullOrEmpty(this[nameof(SubjectName)]) &&
+               string.IsNullOrEmpty(this[nameof(Units)]) &&
+               string.IsNullOrEmpty(this[nameof(SelectedYear)]) &&
+               string.IsNullOrEmpty(this[nameof(SelectedProgramID)]) &&
+               string.IsNullOrEmpty(this[nameof(SelectedSemester)]) &&
+               string.IsNullOrEmpty(this[nameof(ProfessorName)]) &&
+               string.IsNullOrEmpty(this[nameof(Schedule)]);
     }
 
     protected void OnPropertyChanged([CallerMemberName] string propertyName = "")
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        // Optionally, you can also refresh the state of the Save command here if your RelayCommand supports it.
     }
 
     private void ShowSuccessNotification(string message)

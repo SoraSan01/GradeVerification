@@ -134,7 +134,7 @@ namespace GradeVerification.ViewModel
             if (parameter is Subject selectedSubject)
             {
                 var editWindow = new EditSubject(selectedSubject);
-                var viewModel = new EditSubjectViewModel(selectedSubject, LoadSubjectAsync, editWindow);
+                var viewModel = new EditSubjectViewModel(selectedSubject, editWindow, LoadSubjectAsync);
                 editWindow.DataContext = viewModel;
                 editWindow.ShowDialog();
 

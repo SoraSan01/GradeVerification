@@ -8,6 +8,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Net.Mail;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
@@ -16,13 +17,13 @@ using ToastNotifications;
 using ToastNotifications.Lifetime;
 using ToastNotifications.Messages;
 using ToastNotifications.Position;
+using System.Text.RegularExpressions;
 
 namespace GradeVerification.ViewModel
 {
-    public class AddStudentViewModel : INotifyPropertyChanged
+    public class AddStudentViewModel : INotifyPropertyChanged, IDataErrorInfo
     {
         private Notifier _notifier;
-
         private readonly AcademicProgramService _programService;
         private readonly ApplicationDbContext _context;
 
@@ -36,7 +37,6 @@ namespace GradeVerification.ViewModel
         private string _programId;
         private string _status;
 
-
         public string StudentId
         {
             get => _studentId;
@@ -46,49 +46,55 @@ namespace GradeVerification.ViewModel
         public string SchoolId
         {
             get => _schoolId;
-            set { _schoolId = value; OnPropertyChanged(); }
+            set
+            {
+                _schoolId = value;
+                OnPropertyChanged();
+                LoadStudentIfExists();
+                (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            }
         }
 
         public string FirstName
         {
             get => _firstName;
-            set { _firstName = value; OnPropertyChanged(); }
+            set { _firstName = value; OnPropertyChanged(); (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
         }
 
         public string LastName
         {
             get => _lastName;
-            set { _lastName = value; OnPropertyChanged(); }
+            set { _lastName = value; OnPropertyChanged(); (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
         }
 
         public string Email
         {
             get => _email;
-            set { _email = value; OnPropertyChanged(); }
+            set { _email = value; OnPropertyChanged(); (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
         }
 
         public string Semester
         {
             get => _semester;
-            set { _semester = value; OnPropertyChanged(); }
+            set { _semester = value; OnPropertyChanged(); (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
         }
 
         public string Year
         {
             get => _year;
-            set { _year = value; OnPropertyChanged(); }
+            set { _year = value; OnPropertyChanged(); (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
         }
 
         public string ProgramId
         {
             get => _programId;
-            set { _programId = value; OnPropertyChanged(); }
+            set { _programId = value; OnPropertyChanged(); (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
         }
 
         public string Status
         {
             get => _status;
-            set { _status = value; OnPropertyChanged(); }
+            set { _status = value; OnPropertyChanged(); (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
         }
 
         public ObservableCollection<string> Statuses { get; set; }
@@ -118,19 +124,43 @@ namespace GradeVerification.ViewModel
             });
 
             _onUpdate = onUpdate;
-
             _programService = new AcademicProgramService();
             _context = new ApplicationDbContext();
 
             Statuses = new ObservableCollection<string> { "Scholar", "Non-Scholar" };
-            Semesters = new ObservableCollection<string> { "First Semester", "Second Semester" };
+            Semesters = new ObservableCollection<string> { "First Semester", "Second Semester", "Summer" };
             Years = new ObservableCollection<string> { "First Year", "Second Year", "Third Year", "Fourth Year" };
             ProgramList = new ObservableCollection<AcademicProgram>();
 
             LoadPrograms();
 
-            SaveStudentCommand = new RelayCommand(async param => await SaveStudent());
+            // Use a can-execute delegate that checks our validations.
+            SaveStudentCommand = new RelayCommand(async param => await SaveStudent(), CanSaveStudent);
             BackCommand = new RelayCommand(Back);
+        }
+
+        private async void LoadStudentIfExists()
+        {
+            if (string.IsNullOrWhiteSpace(SchoolId)) return;
+
+            var existingStudent = await _context.Students
+                .Where(s => s.SchoolId == SchoolId)
+                .FirstOrDefaultAsync();
+
+            if (existingStudent != null)
+            {
+                FirstName = existingStudent.FirstName;
+                LastName = existingStudent.LastName;
+                Email = existingStudent.Email;
+
+                // Clear these for new entry details
+                ProgramId = null;
+                Semester = null;
+                Year = null;
+                Status = null;
+
+                _notifier.ShowInformation("Existing student found. Some fields have been auto-filled.");
+            }
         }
 
         private void LoadPrograms()
@@ -147,28 +177,34 @@ namespace GradeVerification.ViewModel
         {
             try
             {
-                // Validate input fields
-                if (string.IsNullOrWhiteSpace(SchoolId) ||
-                    string.IsNullOrWhiteSpace(FirstName) ||
-                    string.IsNullOrWhiteSpace(LastName) ||
-                    string.IsNullOrWhiteSpace(Email) ||
-                    string.IsNullOrWhiteSpace(Semester) ||
-                    string.IsNullOrWhiteSpace(Year) ||
-                    string.IsNullOrWhiteSpace(ProgramId) ||
-                    string.IsNullOrWhiteSpace(Status))
+                // Double-check validation (though the command should be disabled if invalid)
+                if (!CanSaveStudent(null))
                 {
-                    ShowErrorNotification("Please fill in all fields.");
+                    ShowErrorNotification("Please fill in all fields correctly.");
                     return;
                 }
 
-                // Check for duplicate email
-                if (_context.Students.Any(s => s.Email == Email))
+                // Check if a student with the same SchoolId, FirstName, LastName, and Email exists
+                var existingStudent = await _context.Students
+                    .Where(s => s.SchoolId == SchoolId &&
+                                s.FirstName == FirstName &&
+                                s.LastName == LastName &&
+                                s.Email == Email)
+                    .FirstOrDefaultAsync();
+
+                if (existingStudent != null)
                 {
-                    ShowErrorNotification("A student with this email already exists.");
-                    return;
+                    if (existingStudent.Year == Year &&
+                        existingStudent.ProgramId == ProgramId &&
+                        existingStudent.Semester == Semester &&
+                        existingStudent.Status == Status)
+                    {
+                        ShowErrorNotification("A student with these details already exists with the same program, year, semester, and status.");
+                        return;
+                    }
                 }
 
-                // Create new student
+                // Create new student record
                 var newStudent = new Student
                 {
                     SchoolId = SchoolId,
@@ -182,14 +218,15 @@ namespace GradeVerification.ViewModel
                 };
 
                 _context.Students.Add(newStudent);
-                await _context.SaveChangesAsync(); // Save the student to generate the Id
+                await _context.SaveChangesAsync(); // Save to generate the student Id
 
-                // Assign subjects
-                if (Status.Equals("Scholar", StringComparison.OrdinalIgnoreCase))
+                // Enroll subjects if applicable (scholar or non-summer semester)
+                if (Status.Equals("Scholar", StringComparison.OrdinalIgnoreCase) ||
+                    (!Semester.Equals("Summer", StringComparison.OrdinalIgnoreCase)))
                 {
                     var subjectsToEnroll = await _context.Subjects
                         .Where(s => s.ProgramId == newStudent.ProgramId && s.Year == newStudent.Year && s.Semester == newStudent.Semester)
-                        .ToListAsync(); // Use ToListAsync for async operation
+                        .ToListAsync();
 
                     if (subjectsToEnroll.Count == 0)
                     {
@@ -201,21 +238,20 @@ namespace GradeVerification.ViewModel
                     {
                         var newGrade = new Grade
                         {
-                            StudentId = newStudent.Id, // Use the saved student ID
+                            StudentId = newStudent.Id,
                             SubjectId = subject.SubjectId,
-                            Score = null // Initially null until graded
+                            Score = null
                         };
 
                         _context.Grade.Add(newGrade);
                     }
 
-                    await _context.SaveChangesAsync(); // Save the grades
+                    await _context.SaveChangesAsync();
                 }
+
                 ClearForm();
-                LoadPrograms(); // Refresh UI
-
+                LoadPrograms(); // Refresh program list if needed
                 ShowSuccessNotification("Student saved successfully!");
-
                 _onUpdate?.Invoke(); // Notify main view to refresh UI
             }
             catch (Exception ex)
@@ -227,12 +263,11 @@ namespace GradeVerification.ViewModel
 
         private void ClearForm()
         {
-            StudentId = string.Empty;
             SchoolId = string.Empty;
             FirstName = string.Empty;
             LastName = string.Empty;
             Email = string.Empty;
-            Semester = null;  // Reset to null instead of empty string for dropdowns
+            Semester = null;
             Year = null;
             ProgramId = null;
             Status = null;
@@ -243,11 +278,94 @@ namespace GradeVerification.ViewModel
             Application.Current.Windows.OfType<AddStudent>().FirstOrDefault()?.Close();
         }
 
+        #region IDataErrorInfo Implementation
+
+        public string this[string columnName]
+        {
+            get
+            {
+                string error = null;
+                switch (columnName)
+                {
+                    case nameof(SchoolId):
+                        if (string.IsNullOrWhiteSpace(SchoolId))
+                            error = "Student ID is required.";
+                        break;
+                    case nameof(FirstName):
+                        if (string.IsNullOrWhiteSpace(FirstName))
+                            error = "First name is required.";
+                        break;
+                    case nameof(LastName):
+                        if (string.IsNullOrWhiteSpace(LastName))
+                            error = "Last name is required.";
+                        break;
+                    case nameof(Email):
+                        if (string.IsNullOrWhiteSpace(Email))
+                            error = "Email is required.";
+                        else if (!IsValidEmail(Email))
+                            error = "Invalid email format.";
+                        break;
+                    case nameof(Semester):
+                        if (string.IsNullOrWhiteSpace(Semester))
+                            error = "Semester selection is required.";
+                        break;
+                    case nameof(Year):
+                        if (string.IsNullOrWhiteSpace(Year))
+                            error = "Year selection is required.";
+                        break;
+                    case nameof(ProgramId):
+                        if (string.IsNullOrWhiteSpace(ProgramId))
+                            error = "Program selection is required.";
+                        break;
+                    case nameof(Status):
+                        if (string.IsNullOrWhiteSpace(Status))
+                            error = "Status selection is required.";
+                        break;
+                }
+                return error;
+            }
+        }
+
+        public string Error => null;
+
+        private bool CanSaveStudent(object parameter)
+        {
+            // All validation errors must be null or empty
+            return string.IsNullOrEmpty(this[nameof(SchoolId)]) &&
+                   string.IsNullOrEmpty(this[nameof(FirstName)]) &&
+                   string.IsNullOrEmpty(this[nameof(LastName)]) &&
+                   string.IsNullOrEmpty(this[nameof(Email)]) &&
+                   string.IsNullOrEmpty(this[nameof(Semester)]) &&
+                   string.IsNullOrEmpty(this[nameof(Year)]) &&
+                   string.IsNullOrEmpty(this[nameof(ProgramId)]) &&
+                   string.IsNullOrEmpty(this[nameof(Status)]);
+        }
+
+        private bool IsValidEmail(string email)
+        {
+            try
+            {
+                // Using MailAddress to validate email format
+                var addr = new MailAddress(email);
+                return addr.Address == email;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        #endregion
+
+        #region INotifyPropertyChanged Implementation
+
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+
+        #endregion
 
         private void ShowSuccessNotification(string message)
         {

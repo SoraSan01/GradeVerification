@@ -12,19 +12,19 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace GradeVerification
+namespace GradeVerification.View.Admin.Windows
 {
     /// <summary>
-    /// Interaction logic for ForgotPassword.xaml
+    /// Interaction logic for UploadStudent.xaml
     /// </summary>
-    public partial class ForgotPassword : Window
+    public partial class UploadStudent : Window
     {
-        public ForgotPassword()
+        public UploadStudent()
         {
             InitializeComponent();
         }
 
-        private void Card_MouseDown(object sender, MouseButtonEventArgs e)
+        private void Border_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.LeftButton == MouseButtonState.Pressed)
                 DragMove();

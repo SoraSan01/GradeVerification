@@ -3,9 +3,11 @@ using GradeVerification.Data;
 using GradeVerification.Model;
 using GradeVerification.Service;
 using GradeVerification.View.Admin.Windows;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -16,182 +18,235 @@ using ToastNotifications.Position;
 
 namespace GradeVerification.ViewModel
 {
-    public class EditSubjectViewModel : INotifyPropertyChanged
+    public class EditSubjectViewModel : INotifyPropertyChanged, IDataErrorInfo
     {
         private Notifier _notifier;
-
-        private readonly AcademicProgramService _programService;
-        private readonly Action _onUpdate; // Callback for UI refresh
-        private readonly EditSubject _editWindow; // Reference to the window
-
-        public ObservableCollection<string> YearList { get; set; }
-        public ObservableCollection<AcademicProgram> ProgramList { get; set; }
-        public ObservableCollection<string> SemesterList { get; set; }
-
-        private string _subjectId;
-        public string SubjectId
-        {
-            get => _subjectId;
-            set { _subjectId = value; OnPropertyChanged(nameof(SubjectId)); }
-        }
-
         private string _subjectCode;
-        public string SubjectCode
-        {
-            get => _subjectCode;
-            set { _subjectCode = value; OnPropertyChanged(nameof(SubjectCode)); }
-        }
-
         private string _subjectName;
-        public string SubjectName
-        {
-            get => _subjectName;
-            set { _subjectName = value; OnPropertyChanged(nameof(SubjectName)); }
-        }
-
         private int _units;
-        public int Units
-        {
-            get => _units;
-            set { _units = value; OnPropertyChanged(nameof(Units)); }
-        }
-
         private string _selectedYear;
-        public string SelectedYear
-        {
-            get => _selectedYear;
-            set { _selectedYear = value; OnPropertyChanged(nameof(SelectedYear)); }
-        }
-
         private string _selectedProgramID;
-        public string SelectedProgramID
-        {
-            get => _selectedProgramID;
-            set { _selectedProgramID = value; OnPropertyChanged(nameof(SelectedProgramID)); }
-        }
-
         private string _selectedSemester;
-        public string SelectedSemester
-        {
-            get => _selectedSemester;
-            set { _selectedSemester = value; OnPropertyChanged(nameof(SelectedSemester)); }
-        }
-
         private string _professor;
-        public string Professor
-        {
-            get => _professor;
-            set { _professor = value; OnPropertyChanged(nameof(Professor)); }
-        }
-
         private string _schedule;
-        public string Schedule
-        {
-            get => _schedule;
-            set { _schedule = value; OnPropertyChanged(nameof(Schedule)); }
-        }
 
-        public ICommand SaveCommand { get; }
-        public ICommand CancelCommand { get; }
+        private readonly EditSubject _editWindow;
+        private readonly Action _onUpdate;
+        private readonly Subject _originalSubject;
 
-        public EditSubjectViewModel(Subject subject, Action onUpdate, EditSubject editWindow)
+        public EditSubjectViewModel(Subject subject, EditSubject editWindow, Action onUpdate)
         {
+            _originalSubject = subject;
+            _editWindow = editWindow ?? throw new ArgumentNullException(nameof(editWindow));
+            _onUpdate = onUpdate ?? throw new ArgumentNullException(nameof(onUpdate));
+
             _notifier = new Notifier(cfg =>
             {
-                cfg.PositionProvider = new PrimaryScreenPositionProvider(
-                    corner: Corner.BottomRight,
-                    offsetX: 10,
-                    offsetY: 10);
-
-                cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
-                    notificationLifetime: TimeSpan.FromSeconds(3),
-                    maximumNotificationCount: MaximumNotificationCount.FromCount(5));
-
+                cfg.PositionProvider = new PrimaryScreenPositionProvider(corner: Corner.BottomRight, offsetX: 10, offsetY: 10);
+                cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(TimeSpan.FromSeconds(3), MaximumNotificationCount.FromCount(5));
                 cfg.Dispatcher = Application.Current.Dispatcher;
             });
 
-            _programService = new AcademicProgramService();
-            _onUpdate = onUpdate;
-            _editWindow = editWindow;
-
-            ProgramList = new ObservableCollection<AcademicProgram>();
-            YearList = new ObservableCollection<string> { "First Year", "Second Year", "Third Year", "Fourth Year" };
-            SemesterList = new ObservableCollection<string> { "First Semester", "Second Semester" };
-
-            SubjectId = subject.SubjectId;
+            // Initialize properties from the existing subject record.
             SubjectCode = subject.SubjectCode;
             SubjectName = subject.SubjectName;
             Units = subject.Units;
             SelectedYear = subject.Year;
-            SelectedSemester = subject.Semester;
             SelectedProgramID = subject.ProgramId;
+            SelectedSemester = subject.Semester;
             Professor = subject.Professor;
             Schedule = subject.Schedule;
 
-            LoadData();
+            // Initialize dropdown lists.
+            YearList = new ObservableCollection<string> { "First Year", "Second Year", "Third Year", "Fourth Year" };
+            SemesterList = new ObservableCollection<string> { "First Semester", "Second Semester" };
+            ProgramList = new ObservableCollection<AcademicProgram>();
+            LoadPrograms();
 
-            SaveCommand = new RelayCommand(async _ => await SaveSubjectAsync());
+            // Create commands with CanExecute based on validation.
+            SaveCommand = new RelayCommand(SaveSubject, _ => !HasErrors());
             CancelCommand = new RelayCommand(Cancel);
         }
 
-        private async Task SaveSubjectAsync()
+        private void LoadPrograms()
         {
+            try
+            {
+                var programs = new AcademicProgramService().GetPrograms() ?? Enumerable.Empty<AcademicProgram>();
+                ProgramList.Clear();
+                foreach (var program in programs)
+                    ProgramList.Add(program);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to load programs: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // Properties with validation support.
+        public string SubjectCode
+        {
+            get => _subjectCode;
+            set { _subjectCode = value; OnPropertyChanged(); }
+        }
+
+        public string SubjectName
+        {
+            get => _subjectName;
+            set { _subjectName = value; OnPropertyChanged(); }
+        }
+
+        public int Units
+        {
+            get => _units;
+            set { _units = value; OnPropertyChanged(); }
+        }
+
+        public string SelectedYear
+        {
+            get => _selectedYear;
+            set { _selectedYear = value; OnPropertyChanged(); }
+        }
+
+        public string SelectedProgramID
+        {
+            get => _selectedProgramID;
+            set { _selectedProgramID = value; OnPropertyChanged(); }
+        }
+
+        public string SelectedSemester
+        {
+            get => _selectedSemester;
+            set { _selectedSemester = value; OnPropertyChanged(); }
+        }
+
+        public string Professor
+        {
+            get => _professor;
+            set { _professor = value; OnPropertyChanged(); }
+        }
+
+        public string Schedule
+        {
+            get => _schedule;
+            set { _schedule = value; OnPropertyChanged(); }
+        }
+
+        // Collections for dropdowns.
+        public ObservableCollection<string> YearList { get; }
+        public ObservableCollection<string> SemesterList { get; }
+        public ObservableCollection<AcademicProgram> ProgramList { get; }
+
+        // Commands.
+        public ICommand SaveCommand { get; }
+        public ICommand CancelCommand { get; }
+
+        // IDataErrorInfo implementation.
+        public string Error => null;
+        public string this[string columnName]
+        {
+            get
+            {
+                switch (columnName)
+                {
+                    case nameof(SubjectCode):
+                        if (string.IsNullOrWhiteSpace(SubjectCode))
+                            return "Subject Code is required.";
+                        break;
+                    case nameof(SubjectName):
+                        if (string.IsNullOrWhiteSpace(SubjectName))
+                            return "Subject Name is required.";
+                        break;
+                    case nameof(Units):
+                        if (Units <= 0)
+                            return "Units must be greater than zero.";
+                        break;
+                    case nameof(SelectedYear):
+                        if (string.IsNullOrWhiteSpace(SelectedYear))
+                            return "Year selection is required.";
+                        break;
+                    case nameof(SelectedProgramID):
+                        if (string.IsNullOrWhiteSpace(SelectedProgramID))
+                            return "Program selection is required.";
+                        break;
+                    case nameof(SelectedSemester):
+                        if (string.IsNullOrWhiteSpace(SelectedSemester))
+                            return "Semester selection is required.";
+                        break;
+                    case nameof(Professor):
+                        if (string.IsNullOrWhiteSpace(Professor))
+                            return "Professor Name is required.";
+                        break;
+                    case nameof(Schedule):
+                        if (string.IsNullOrWhiteSpace(Schedule))
+                            return "Schedule is required.";
+                        break;
+                }
+                return null;
+            }
+        }
+
+        // Checks whether any field has a validation error.
+        private bool HasErrors() =>
+            !string.IsNullOrEmpty(this[nameof(SubjectCode)]) ||
+            !string.IsNullOrEmpty(this[nameof(SubjectName)]) ||
+            !string.IsNullOrEmpty(this[nameof(Units)]) ||
+            !string.IsNullOrEmpty(this[nameof(SelectedYear)]) ||
+            !string.IsNullOrEmpty(this[nameof(SelectedProgramID)]) ||
+            !string.IsNullOrEmpty(this[nameof(SelectedSemester)]) ||
+            !string.IsNullOrEmpty(this[nameof(Professor)]) ||
+            !string.IsNullOrEmpty(this[nameof(Schedule)]);
+
+        // Saves the subject after validation.
+        private async void SaveSubject(object parameter)
+        {
+            if (HasErrors())
+            {
+                ShowErrorNotification("Please correct the errors before saving.");
+                return;
+            }
+
             try
             {
                 using (var context = new ApplicationDbContext())
                 {
-                    var existingSubject = await context.Subjects.FindAsync(SubjectId);
-                    if (existingSubject != null)
+                    var subjectToUpdate = await context.Subjects.FindAsync(_originalSubject.SubjectId);
+                    if (subjectToUpdate != null)
                     {
-                        existingSubject.SubjectCode = SubjectCode;
-                        existingSubject.SubjectName = SubjectName;
-                        existingSubject.Units = Units;
-                        existingSubject.Year = SelectedYear;
-                        existingSubject.Semester = SelectedSemester;
-                        existingSubject.ProgramId = SelectedProgramID;
-                        existingSubject.Professor = Professor;
-                        existingSubject.Schedule = Schedule;
-
-                        await context.SaveChangesAsync(); // Save changes to the database
-                    }
-                    else
-                    {
-                        ShowSuccessNotification("Subject not found!");
-                        return;
+                        subjectToUpdate.SubjectCode = SubjectCode;
+                        subjectToUpdate.SubjectName = SubjectName;
+                        subjectToUpdate.Units = Units;
+                        subjectToUpdate.Year = SelectedYear;
+                        subjectToUpdate.ProgramId = SelectedProgramID;
+                        subjectToUpdate.Semester = SelectedSemester;
+                        subjectToUpdate.Professor = Professor;
+                        subjectToUpdate.Schedule = Schedule;
+                        await context.SaveChangesAsync();
                     }
                 }
                 ShowSuccessNotification("Subject updated successfully!");
-
-                _onUpdate?.Invoke(); // Notify UI to refresh data
-                _editWindow?.Close(); // Close the edit window
+                _onUpdate?.Invoke();
+                _editWindow.Close();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private void LoadData()
-        {
-            var programs = _programService.GetPrograms();
-            ProgramList.Clear();
-
-            foreach (var program in programs)
-            {
-                ProgramList.Add(program);
+                MessageBox.Show($"Error updating subject: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowErrorNotification("Error updating subject.");
             }
         }
 
         private void Cancel(object parameter)
         {
-            _editWindow?.Close();
+            _editWindow.Close();
+        }
+
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            (SaveCommand as RelayCommand)?.RaiseCanExecuteChanged();
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
 
         private void ShowSuccessNotification(string message)
         {

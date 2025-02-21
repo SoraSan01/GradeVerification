@@ -25,7 +25,6 @@
                 <Grid Margin="30">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
@@ -39,10 +38,13 @@
 
                     <!-- DataGrid Preview -->
                     <Border Grid.Row="1" Background="#FFFFFF" CornerRadius="10" Margin="20" Padding="0">
-                        <DataGrid ItemsSource="{Binding Grades}" AutoGenerateColumns="False"
-                                IsReadOnly="True" CanUserAddRows="False">
+                        <DataGrid ItemsSource="{Binding Grades}" Style="{StaticResource DataGridStyle1}"
+                          RowStyle="{DynamicResource DataGridRowStyle1}"
+                          ColumnHeaderStyle="{DynamicResource DataGridColumnHeaderStyle1}"
+                          CellStyle="{DynamicResource DataGridCellStyle1}">
+                            
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Student ID" Binding="{Binding Student.StudentId}"/>
+                                <DataGridTextColumn Header="Student ID" Binding="{Binding Student.Id}"/>
                                 <DataGridTextColumn Header="Student Name" Binding="{Binding Student.FullName}"/>
                                 <DataGridTextColumn Header="Subject" Binding="{Binding Subject.SubjectCode}"/>
                                 <DataGridTextColumn Header="Grade" Binding="{Binding Score}"/>

@@ -2,11 +2,15 @@
 using GradeVerification.Data;
 using GradeVerification.Model;
 using GradeVerification.View.Admin.Windows;
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
 using ToastNotifications;
 using ToastNotifications.Lifetime;
@@ -15,15 +19,17 @@ using ToastNotifications.Position;
 
 namespace GradeVerification.ViewModel
 {
-    public class UserDashboardViewModel : INotifyPropertyChanged
+    public class UserDashboardViewModel : INotifyPropertyChanged, INotifyDataErrorInfo
     {
         private Notifier _notifier;
-
         private ObservableCollection<User> _users;
         private string _searchText;
         private string _selectedRole;
         private User _selectedUser;
         private readonly ApplicationDbContext _dbContext;
+
+        // CollectionView for filtering instead of recreating the collection
+        public ICollectionView UsersView { get; private set; }
 
         public ObservableCollection<User> Users
         {
@@ -36,13 +42,17 @@ namespace GradeVerification.ViewModel
             get => _searchText;
             set
             {
-                _searchText = value;
-                OnPropertyChanged();
-                FilterUsers(); // Trigger filtering when SearchText changes
+                if (_searchText != value)
+                {
+                    _searchText = value;
+                    OnPropertyChanged();
+                    ValidateSearchText();
+                    RefreshFilter();
+                }
             }
         }
 
-        // Define the list of roles
+        // List of roles with a default "All Roles" option
         public List<string> Roles { get; } = new List<string> { "All Roles", "Admin", "Encoder", "Staff" };
 
         public string SelectedRole
@@ -50,9 +60,12 @@ namespace GradeVerification.ViewModel
             get => _selectedRole;
             set
             {
-                _selectedRole = value;
-                OnPropertyChanged();
-                FilterUsers(); // Trigger filtering when SelectedRole changes
+                if (_selectedRole != value)
+                {
+                    _selectedRole = value;
+                    OnPropertyChanged();
+                    RefreshFilter();
+                }
             }
         }
 
@@ -68,7 +81,6 @@ namespace GradeVerification.ViewModel
 
         public UserDashboardViewModel(ApplicationDbContext dbContext)
         {
-
             _notifier = new Notifier(cfg =>
             {
                 cfg.PositionProvider = new PrimaryScreenPositionProvider(
@@ -86,53 +98,79 @@ namespace GradeVerification.ViewModel
             _dbContext = dbContext;
             LoadUsers();
 
-            SelectedRole = "All Roles"; // Initialize SelectedRole to "All Roles"
+            SelectedRole = "All Roles"; // Initialize the filter
 
             EditUserCommand = new RelayCommand(EditUser);
             DeleteUserCommand = new RelayCommand(DeleteUser);
             AddUserCommand = new RelayCommand(AddUser);
-
         }
 
         private void LoadUsers()
         {
-            var usersFromDb = _dbContext.Users.ToList();
-            Users = new ObservableCollection<User>(usersFromDb);
+            try
+            {
+                var usersFromDb = _dbContext.Users.ToList();
+                Users = new ObservableCollection<User>(usersFromDb);
+                // Set up the CollectionView for filtering
+                UsersView = CollectionViewSource.GetDefaultView(Users);
+                UsersView.Filter = FilterUsersPredicate;
+            }
+            catch (Exception ex)
+            {
+                ShowErrorNotification("Error loading users.");
+                MessageBox.Show($"Error loading users: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
-        private void FilterUsers()
+        private bool FilterUsersPredicate(object item)
         {
-            var filteredUsers = _dbContext.Users.AsEnumerable(); // Use AsEnumerable to work in memory
-
-            if (!string.IsNullOrEmpty(SearchText))
+            if (item is User user)
             {
-                filteredUsers = filteredUsers.Where(u => u.FullName.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+                bool matchesSearch = string.IsNullOrWhiteSpace(SearchText) ||
+                                     user.FullName.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0;
+                bool matchesRole = string.IsNullOrWhiteSpace(SelectedRole) || SelectedRole == "All Roles" ||
+                                   user.Role.Equals(SelectedRole, StringComparison.OrdinalIgnoreCase);
+                return matchesSearch && matchesRole;
             }
+            return false;
+        }
 
-            if (!string.IsNullOrEmpty(SelectedRole) && SelectedRole != "All Roles")
-            {
-                filteredUsers = filteredUsers.Where(u => u.Role.Equals(SelectedRole, StringComparison.OrdinalIgnoreCase));
-            }
-
-            Users = new ObservableCollection<User>(filteredUsers.ToList());
+        private void RefreshFilter()
+        {
+            UsersView?.Refresh();
         }
 
         private void AddUser(object parameter)
         {
-            var addUser = new AddUser();
-            addUser.DataContext = new AddUserViewModel(_dbContext, LoadUsers);
-            addUser.Show();
+            var addUserWindow = new AddUser();
+            // Pass a callback to reload users after adding
+            addUserWindow.DataContext = new AddUserViewModel(_dbContext, () =>
+            {
+                LoadUsers();
+                RefreshFilter();
+            });
+            addUserWindow.Show();
         }
+
         private void EditUser(object parameter)
         {
             if (parameter is User selectedUser)
             {
-                var editUser = new EditUser();
-                editUser.DataContext = new EditUserViewModel(selectedUser, _dbContext, LoadUsers);
-                if (editUser.ShowDialog() == true)
+                var editUserWindow = new EditUser();
+                editUserWindow.DataContext = new EditUserViewModel(selectedUser, _dbContext, () =>
+                {
+                    LoadUsers();
+                    RefreshFilter();
+                });
+                if (editUserWindow.ShowDialog() == true)
                 {
                     LoadUsers(); // Refresh the list after editing
+                    RefreshFilter();
                 }
+            }
+            else
+            {
+                ShowErrorNotification("Invalid user selected for editing.");
             }
         }
 
@@ -140,21 +178,16 @@ namespace GradeVerification.ViewModel
         {
             if (parameter is User user)
             {
-                // Confirm the deletion action from the user
-                var result = MessageBox.Show("Are you sure you want to delete this user?", "Confirm Deletion", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                var result = MessageBox.Show("Are you sure you want to delete this user?", "Confirm Deletion",
+                                             MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
                 if (result == MessageBoxResult.Yes)
                 {
                     try
                     {
-                        // Remove the user from the database
                         _dbContext.Users.Remove(user);
                         _dbContext.SaveChanges();
-
-                        // Remove the user from the observable collection
                         Users.Remove(user);
-
-                        // Optionally, show a success message
                         ShowSuccessNotification("User deleted successfully.");
                     }
                     catch (Exception ex)
@@ -164,14 +197,75 @@ namespace GradeVerification.ViewModel
                     }
                 }
             }
+            else
+            {
+                ShowErrorNotification("No user selected to delete.");
+            }
         }
 
+        #region Validation (INotifyDataErrorInfo)
+
+        private readonly Dictionary<string, List<string>> _propertyErrors = new Dictionary<string, List<string>>();
+
+        public bool HasErrors => _propertyErrors.Any();
+        public event EventHandler<DataErrorsChangedEventArgs> ErrorsChanged;
+
+        public IEnumerable GetErrors(string propertyName)
+        {
+            if (string.IsNullOrEmpty(propertyName)) return null;
+            return _propertyErrors.ContainsKey(propertyName) ? _propertyErrors[propertyName] : null;
+        }
+
+        protected void AddError(string propertyName, string error)
+        {
+            if (!_propertyErrors.ContainsKey(propertyName))
+            {
+                _propertyErrors[propertyName] = new List<string>();
+            }
+            if (!_propertyErrors[propertyName].Contains(error))
+            {
+                _propertyErrors[propertyName].Add(error);
+                OnErrorsChanged(propertyName);
+            }
+        }
+
+        protected void ClearErrors(string propertyName)
+        {
+            if (_propertyErrors.ContainsKey(propertyName))
+            {
+                _propertyErrors.Remove(propertyName);
+                OnErrorsChanged(propertyName);
+            }
+        }
+
+        protected virtual void OnErrorsChanged(string propertyName)
+        {
+            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+        }
+
+        // A sample validation: you can adjust or add more as needed.
+        private void ValidateSearchText()
+        {
+            ClearErrors(nameof(SearchText));
+            if (!string.IsNullOrEmpty(SearchText) && SearchText.Length > 100)
+            {
+                AddError(nameof(SearchText), "Search text is too long (maximum 100 characters).");
+            }
+        }
+
+        #endregion
+
+        #region INotifyPropertyChanged Implementation
 
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+
+        #endregion
+
+        #region Notifications
 
         private void ShowSuccessNotification(string message)
         {
@@ -182,5 +276,7 @@ namespace GradeVerification.ViewModel
         {
             _notifier.ShowError(message);
         }
+
+        #endregion
     }
 }

@@ -39,5 +39,11 @@ namespace GradeVerification
         {
             Application.Current.Shutdown();
         }
+
+        private void Card_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+                DragMove();
+        }
     }
 }

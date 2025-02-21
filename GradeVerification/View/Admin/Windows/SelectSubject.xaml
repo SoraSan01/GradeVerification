@@ -16,7 +16,7 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Header with Search Bar -->
+            <!-- Header with Search and Filter Controls -->
             <Border Background="#FFFFFF" CornerRadius="10" Margin="20" Padding="15">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -24,41 +24,42 @@
                         <ColumnDefinition Width="1.5*"/>
                         <ColumnDefinition Width="1*"/>
                         <ColumnDefinition Width="1*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                             Height="40" Padding="10" Background="#F5F5F5" Width="300"
+                    <TextBox Grid.Column="0" 
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"  
+                             Height="40" Padding="10" Background="#F5F5F5" 
                              materialDesign:HintAssist.Hint="Search Subject..." 
                              Style="{StaticResource MaterialDesignOutlinedTextBox}" 
-                             FontSize="14" BorderBrush="#E0E0E0" Grid.Column="0"/>
-                    
-                        <ComboBox Width="150" Grid.Column="1" ItemsSource="{Binding Programs}" SelectedItem="{Binding SelectedProgram, Mode=TwoWay}"
-              materialDesign:HintAssist.Hint="Filter by Program" Margin="5"/>
+                             FontSize="14" BorderBrush="#E0E0E0"/>
 
-                        <ComboBox Width="120" Grid.Column="2" ItemsSource="{Binding Years}" SelectedItem="{Binding SelectedYear, Mode=TwoWay}"
-              materialDesign:HintAssist.Hint="Filter by Year" Margin="5"/>
+                    <ComboBox Grid.Column="1" Width="150" 
+                              ItemsSource="{Binding Programs}" 
+                              SelectedItem="{Binding SelectedProgram, Mode=TwoWay}" 
+                              materialDesign:HintAssist.Hint="Filter by Program" Margin="5"/>
 
-                        <ComboBox Width="120" Grid.Column="3" ItemsSource="{Binding Semesters}" SelectedItem="{Binding SelectedSemester, Mode=TwoWay}"
-              materialDesign:HintAssist.Hint="Filter by Semester" Margin="5"/>
+                    <ComboBox Grid.Column="2" Width="120" 
+                              ItemsSource="{Binding Years}" 
+                              SelectedItem="{Binding SelectedYear, Mode=TwoWay}" 
+                              materialDesign:HintAssist.Hint="Filter by Year" Margin="5"/>
 
+                    <ComboBox Grid.Column="3" Width="120" 
+                              ItemsSource="{Binding Semesters}" 
+                              SelectedItem="{Binding SelectedSemester, Mode=TwoWay}" 
+                              materialDesign:HintAssist.Hint="Filter by Semester" Margin="5"/>
                 </Grid>
-                
             </Border>
 
             <!-- Subject Data Table -->
             <Border Grid.Row="1" Background="#FFFFFF" CornerRadius="10" Margin="20" Padding="0">
-                <DataGrid Name="dgSubjects" Style="{StaticResource DataGridStyle1}"
+                <DataGrid Name="dgSubjects" ItemsSource="{Binding Subjects}" 
+                          Style="{StaticResource DataGridStyle1}"
                           RowStyle="{DynamicResource DataGridRowStyle1}"
                           ColumnHeaderStyle="{DynamicResource DataGridColumnHeaderStyle1}"
                           CellStyle="{DynamicResource DataGridCellStyle1}"
-                          ItemsSource="{Binding Subjects}"
                           AutoGenerateColumns="False"
-                          CanUserAddRows="False" IsReadOnly="True">
-
+                          CanUserAddRows="False" IsReadOnly="False">
                     <DataGrid.Columns>
-                        
                         <DataGridTextColumn Header="Subject Code" Binding="{Binding SubjectCode}" Width="*">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
@@ -66,7 +67,6 @@
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
-
                         <DataGridTextColumn Header="Subject Name" Binding="{Binding SubjectName}" Width="*">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
@@ -74,7 +74,6 @@
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
-
                         <DataGridTextColumn Header="Units" Binding="{Binding Units}" Width="*">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
@@ -82,17 +81,15 @@
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
-
-                        <!-- Checkbox Column -->
+                        <!-- Checkbox Column for selecting subjects -->
                         <DataGridTemplateColumn Header="Select" Width="*">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <CheckBox Style="{StaticResource MaterialDesignActionDarkCheckBox}" 
+                                    <CheckBox Style="{StaticResource MaterialDesignActionLightToggleButton}" 
                                               IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-
                     </DataGrid.Columns>
                 </DataGrid>
             </Border>
@@ -102,7 +99,6 @@
                 <Button Content="Cancel" Width="120" Height="40" Padding="10" Background="#E0E0E0"
                         Foreground="#000000" FontSize="14" FontWeight="SemiBold" BorderBrush="Transparent"
                         materialDesign:ButtonAssist.CornerRadius="8" Command="{Binding CancelCommand}"/>
-
                 <Button Content="Save Selected" Width="150" Height="40" Padding="10" Background="#28A745"
                         Foreground="White" FontSize="14" FontWeight="SemiBold" BorderBrush="Transparent"
                         materialDesign:ButtonAssist.CornerRadius="8" Margin="10,0,0,0"

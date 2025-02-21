@@ -26,17 +26,20 @@ namespace GradeVerification.View.Admin.Windows
 
         private void Border_MouseDown(object sender, MouseButtonEventArgs e)
         {
-
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                this.DragMove();
+            }
         }
 
         private void btn_Minimize(object sender, RoutedEventArgs e)
         {
-
+            this.WindowState = WindowState.Minimized;
         }
 
         private void btn_Close(object sender, RoutedEventArgs e)
         {
-
+            this.Close();
         }
     }
 }

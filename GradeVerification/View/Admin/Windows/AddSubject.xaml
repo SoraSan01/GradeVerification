@@ -84,39 +84,49 @@
                             <Separator Grid.Row="1" Height="1" Background="#e1e6eb"/>
 
                             <!-- Subject Code -->
-                            <TextBox Grid.Row="2" Grid.Column="0" Margin="10" materialDesign:HintAssist.Hint="Subject Code"
-                                     Text="{Binding SubjectCode, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBox Grid.Row="2" Grid.Column="0" Margin="10"
+                                     materialDesign:HintAssist.Hint="Subject Code"
+                                     Text="{Binding SubjectCode, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
 
                             <!-- Subject Name -->
-                            <TextBox Grid.Row="2" Grid.Column="1" Margin="10" materialDesign:HintAssist.Hint="Subject Name"
-                                     Text="{Binding SubjectName, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" Margin="10"
+                                     materialDesign:HintAssist.Hint="Subject Name"
+                                     Text="{Binding SubjectName, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
 
                             <!-- Units -->
-                            <TextBox Grid.Row="3" Grid.Column="0" Margin="10" materialDesign:HintAssist.Hint="Units"
-                                     Text="{Binding Units, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBox Grid.Row="3" Grid.Column="0" Margin="10"
+                                     materialDesign:HintAssist.Hint="Units"
+                                     Text="{Binding Units, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
 
                             <!-- Year ComboBox -->
-                            <ComboBox Grid.Row="3" Grid.Column="1" Margin="10" materialDesign:HintAssist.Hint="Year"
-                                      ItemsSource="{Binding YearList}" SelectedItem="{Binding SelectedYear}"/>
+                            <ComboBox Grid.Row="3" Grid.Column="1" Margin="10"
+                                      materialDesign:HintAssist.Hint="Year"
+                                      ItemsSource="{Binding YearList}" 
+                                      SelectedItem="{Binding SelectedYear, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
 
                             <!-- Program ComboBox -->
-                            <ComboBox Grid.Row="4" Grid.Column="0" Margin="10" materialDesign:HintAssist.Hint="Program"
+                            <ComboBox Grid.Row="4" Grid.Column="0" Margin="10"
+                                      materialDesign:HintAssist.Hint="Program"
                                       ItemsSource="{Binding ProgramList}" 
                                       DisplayMemberPath="ProgramCode" 
                                       SelectedValuePath="Id"  
-                                      SelectedValue="{Binding SelectedProgramID, Mode=TwoWay}"/>
+                                      SelectedValue="{Binding SelectedProgramID, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
 
                             <!-- Semester ComboBox -->
-                            <ComboBox Grid.Row="4" Grid.Column="1" Margin="10" materialDesign:HintAssist.Hint="Semester"
-                                      ItemsSource="{Binding SemesterList}" SelectedItem="{Binding SelectedSemester}"/>
+                            <ComboBox Grid.Row="4" Grid.Column="1" Margin="10"
+                                      materialDesign:HintAssist.Hint="Semester"
+                                      ItemsSource="{Binding SemesterList}" 
+                                      SelectedItem="{Binding SelectedSemester, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
 
                             <!-- Professor Name -->
-                            <TextBox Grid.Row="5" Grid.Column="0" Margin="10" materialDesign:HintAssist.Hint="Professor Name"
-                                     Text="{Binding ProfessorName, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBox Grid.Row="5" Grid.Column="0" Margin="10"
+                                     materialDesign:HintAssist.Hint="Professor Name"
+                                     Text="{Binding ProfessorName, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
 
                             <!-- Schedule Inputs -->
-                            <TextBox Grid.Row="5" Grid.Column="1" Margin="10" materialDesign:HintAssist.Hint="Start Time"
-                                     Text="{Binding Schedule, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBox Grid.Row="5" Grid.Column="1" Margin="10"
+                                     materialDesign:HintAssist.Hint="Schedule"
+                                     Text="{Binding Schedule, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
 
                             <!-- Buttons -->
                             <StackPanel Grid.Row="8" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="20">

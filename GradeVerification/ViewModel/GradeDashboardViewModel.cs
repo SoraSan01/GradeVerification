@@ -4,141 +4,210 @@ using GradeVerification.Model;
 using GradeVerification.View.Admin.Windows;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using ToastNotifications;
+using ToastNotifications.Lifetime;
+using ToastNotifications.Messages;
+using ToastNotifications.Position;
 
 namespace GradeVerification.ViewModel
 {
-    public class GradeDashboardViewModel : INotifyPropertyChanged
+    public class GradeDashboardViewModel : INotifyPropertyChanged, INotifyDataErrorInfo
     {
+        // Private backing fields
         private string _searchText;
+        private ObservableCollection<Grade> _grades;
+        private ObservableCollection<string> _semesters;
+        private string _selectedSemester;
+        private ObservableCollection<string> _years;
+        private string _selectedYear;
+        private ObservableCollection<string> _programs;
+        private string _selectedProgram;
+        private bool _isLoading;
+
+        // Notifier for user feedback
+        private readonly Notifier _notifier;
+
+        // Validation dictionary for INotifyDataErrorInfo
+        private readonly Dictionary<string, List<string>> _propertyErrors = new Dictionary<string, List<string>>();
+
+        #region Properties
+
         public string SearchText
         {
             get => _searchText;
             set
             {
-                _searchText = value;
-                OnPropertyChanged(nameof(SearchText));
-                Task.Run(FilterGradesAsync); // Run FilterGradesAsync on a background thread
+                if (_searchText != value)
+                {
+                    _searchText = value;
+                    OnPropertyChanged();
+                    ValidateSearchText();
+                    // Trigger filtering asynchronously
+                    _ = FilterGradesAsync();
+                }
             }
         }
 
-        private ObservableCollection<Grade> _grades;
         public ObservableCollection<Grade> Grades
         {
             get => _grades;
-            set
-            {
-                _grades = value;
-                OnPropertyChanged(nameof(Grades));
-            }
+            set { _grades = value; OnPropertyChanged(); }
         }
 
-        private ObservableCollection<string> _semesters;
         public ObservableCollection<string> Semesters
         {
             get => _semesters;
-            set
-            {
-                _semesters = value;
-                OnPropertyChanged(nameof(Semesters));
-            }
+            set { _semesters = value; OnPropertyChanged(); }
         }
 
-        private string _selectedSemester;
         public string SelectedSemester
         {
             get => _selectedSemester;
             set
             {
-                _selectedSemester = value;
-                OnPropertyChanged(nameof(SelectedSemester));
-                Task.Run(FilterGradesAsync); // Run FilterGradesAsync on a background thread
+                if (_selectedSemester != value)
+                {
+                    _selectedSemester = value;
+                    OnPropertyChanged();
+                    _ = FilterGradesAsync();
+                }
             }
         }
 
-        private ObservableCollection<string> _years;
         public ObservableCollection<string> Years
         {
             get => _years;
-            set
-            {
-                _years = value;
-                OnPropertyChanged(nameof(Years));
-            }
+            set { _years = value; OnPropertyChanged(); }
         }
 
-        private string _selectedYear;
         public string SelectedYear
         {
             get => _selectedYear;
             set
             {
-                _selectedYear = value;
-                OnPropertyChanged(nameof(SelectedYear));
-                Task.Run(FilterGradesAsync); // Run FilterGradesAsync on a background thread
+                if (_selectedYear != value)
+                {
+                    _selectedYear = value;
+                    OnPropertyChanged();
+                    _ = FilterGradesAsync();
+                }
             }
         }
 
-        private ObservableCollection<string> _programs;
         public ObservableCollection<string> Programs
         {
             get => _programs;
-            set
-            {
-                _programs = value;
-                OnPropertyChanged(nameof(Programs));
-            }
+            set { _programs = value; OnPropertyChanged(); }
         }
 
-        private string _selectedProgram;
         public string SelectedProgram
         {
             get => _selectedProgram;
             set
             {
-                _selectedProgram = value;
-                OnPropertyChanged(nameof(SelectedProgram));
-                Task.Run(FilterGradesAsync); // Run FilterGradesAsync on a background thread
+                if (_selectedProgram != value)
+                {
+                    _selectedProgram = value;
+                    OnPropertyChanged();
+                    _ = FilterGradesAsync();
+                }
             }
         }
+
+        public bool IsLoading
+        {
+            get => _isLoading;
+            set { _isLoading = value; OnPropertyChanged(); }
+        }
+
+        #endregion
+
+        #region Commands
 
         public ICommand DeleteGradeCommand { get; }
         public ICommand UploadFileCommand { get; }
         public ICommand InputGradeCommand { get; }
         public ICommand AddSubjectCommand { get; }
+        public ICommand EnterGradeCommand { get; }
+
+        #endregion
+
+        #region Constructor
 
         public GradeDashboardViewModel()
         {
-            Grades = new ObservableCollection<Grade>();
-            Semesters = new ObservableCollection<string> { "1st Semester", "2nd Semester" };
-            Years = new ObservableCollection<string> { "2023", "2024" };
-            Programs = new ObservableCollection<string> { "Program A", "Program B" };
+            // Initialize notifier with ToastNotifications configuration
+            _notifier = new Notifier(cfg =>
+            {
+                cfg.PositionProvider = new PrimaryScreenPositionProvider(corner: Corner.BottomRight, offsetX: 10, offsetY: 10);
+                cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(notificationLifetime: TimeSpan.FromSeconds(3),
+                    maximumNotificationCount: MaximumNotificationCount.FromCount(5));
+                cfg.Dispatcher = Application.Current.Dispatcher;
+            });
 
-            DeleteGradeCommand = new RelayCommand(DeleteGrade);
+            // Load filter options from the database with error handling
+            try
+            {
+                using (var context = new ApplicationDbContext())
+                {
+                    Semesters = new ObservableCollection<string>(context.Subjects
+                        .Select(s => s.Semester)
+                        .Distinct()
+                        .ToList());
+
+                    Years = new ObservableCollection<string>(context.Students
+                        .Select(s => s.Year)
+                        .Distinct()
+                        .ToList());
+
+                    Programs = new ObservableCollection<string>(context.Students
+                        .Select(s => s.AcademicProgram.ProgramCode)
+                        .Distinct()
+                        .ToList());
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading filter options: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            // Initialize commands with parameter validation
+            DeleteGradeCommand = new RelayCommand(DeleteGrade, param => param is Grade);
             UploadFileCommand = new RelayCommand(UploadGrades);
-            InputGradeCommand = new RelayCommand(InputGrade);
+            InputGradeCommand = new RelayCommand(InputGrade, param => param is Grade);
             AddSubjectCommand = new RelayCommand(AddSubject);
+            EnterGradeCommand = new RelayCommand(EnterGrade);
 
-            Task.Run(LoadGradesAsync); // Load initial grades asynchronously
+            // Load initial grades asynchronously
+            _ = LoadGradesAsync();
         }
+
+        #endregion
+
+        #region Data Loading & Filtering
 
         private async Task LoadGradesAsync()
         {
             try
             {
+                IsLoading = true;
                 using (var context = new ApplicationDbContext())
                 {
                     var grades = await context.Grade
-                                              .Include(g => g.Student)
-                                              .Include(g => g.Subject)
-                                              .ToListAsync(); // Perform the query asynchronously
+                        .Include(g => g.Student)
+                        .Include(g => g.Subject)
+                        .ToListAsync();
 
-                    // Update the Grades collection on the UI thread
+                    // Update Grades on the UI thread
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         Grades = new ObservableCollection<Grade>(grades);
@@ -149,6 +218,10 @@ namespace GradeVerification.ViewModel
             {
                 MessageBox.Show($"Error loading grades: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
         private async Task FilterGradesAsync()
@@ -158,34 +231,28 @@ namespace GradeVerification.ViewModel
                 using (var context = new ApplicationDbContext())
                 {
                     var query = context.Grade
-                                       .Include(g => g.Student)
-                                       .Include(g => g.Subject)
-                                       .AsQueryable();
+                        .Include(g => g.Student)
+                        .Include(g => g.Subject)
+                        .AsQueryable();
 
                     if (!string.IsNullOrWhiteSpace(SearchText))
                     {
-                        query = query.Where(g => g.Student.FirstName.Contains(SearchText) ||
-                                                  g.Student.LastName.Contains(SearchText) ||
-                                                  g.Student.SchoolId.Contains(SearchText));
+                        var searchLower = SearchText.ToLower();
+                        query = query.Where(g => (g.Student.FirstName + " " + g.Student.LastName).ToLower().Contains(searchLower) ||
+                                                 g.Student.SchoolId.ToLower().Contains(searchLower) ||
+                                                 g.Subject.SubjectCode.ToLower().Contains(searchLower));
                     }
 
                     if (!string.IsNullOrWhiteSpace(SelectedSemester))
-                    {
-                        query = query.Where(g => g.Subject.Semester == SelectedSemester);
-                    }
+                        query = query.Where(g => g.Subject.Semester.ToLower() == SelectedSemester.ToLower());
 
                     if (!string.IsNullOrWhiteSpace(SelectedYear))
-                    {
-                        query = query.Where(g => g.Subject.Year == SelectedYear);
-                    }
+                        query = query.Where(g => g.Student.Year.ToLower() == SelectedYear.ToLower());
 
                     if (!string.IsNullOrWhiteSpace(SelectedProgram))
-                    {
-                        query = query.Where(g => g.Subject.ProgramId == SelectedProgram);
-                    }
+                        query = query.Where(g => g.Student.AcademicProgram.ProgramCode.ToLower() == SelectedProgram.ToLower());
 
                     var filteredGrades = await query.ToListAsync();
-
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         Grades = new ObservableCollection<Grade>(filteredGrades);
@@ -198,6 +265,10 @@ namespace GradeVerification.ViewModel
             }
         }
 
+        #endregion
+
+        #region Command Handlers
+
         private void InputGrade(object parameter)
         {
             if (parameter is Grade selectedGrade)
@@ -205,12 +276,10 @@ namespace GradeVerification.ViewModel
                 try
                 {
                     var inputGradeWindow = new InputGrade();
-                    var inputGradeViewModel = new InputGradeViewModel(selectedGrade); // Pass LoadGradesAsync as a Func<Task>
-                    inputGradeWindow.DataContext = inputGradeViewModel;
-                    inputGradeWindow.ShowDialog(); // Use ShowDialog to ensure modal behavior
-
-                    // Refresh the data after editing
-                    Task.Run(LoadGradesAsync); // Make sure to refresh after editing
+                    inputGradeWindow.DataContext = new InputGradeViewModel(selectedGrade);
+                    inputGradeWindow.ShowDialog();
+                    // Refresh data after editing
+                    _ = LoadGradesAsync();
                 }
                 catch (Exception ex)
                 {
@@ -223,42 +292,54 @@ namespace GradeVerification.ViewModel
             }
         }
 
-        private void DeleteGrade(object parameter)
+        private async void DeleteGrade(object parameter)
         {
             if (parameter is Grade selectedGrade)
             {
-                var result = MessageBox.Show("Are you sure you want to delete this grade?", "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                var result = MessageBox.Show("Are you sure you want to delete this grade?", "Confirm Delete",
+                                             MessageBoxButton.YesNo, MessageBoxImage.Warning);
                 if (result == MessageBoxResult.Yes)
                 {
-                    using (var context = new ApplicationDbContext())
+                    try
                     {
-                        context.Grade.Remove(selectedGrade);
-                        context.SaveChanges();
+                        using (var context = new ApplicationDbContext())
+                        {
+                            context.Grade.Remove(selectedGrade);
+                            await context.SaveChangesAsync();
+                        }
+                        await LoadGradesAsync();
+                        _notifier.ShowSuccess("Grade deleted successfully.");
                     }
-                    Task.Run(LoadGradesAsync); // Refresh grades after deletion
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error deleting grade: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
                 }
             }
         }
 
+        private void EnterGrade(object parameter)
+        {
+            var enterGradeWindow = new EnterGrade();
+            enterGradeWindow.DataContext = new EnterGradeViewModel();
+            enterGradeWindow.ShowDialog();
+        }
+
         private void UploadGrades(object parameter)
         {
-            var uploadGrade = new UploadGrades();
-            uploadGrade.DataContext = new UploadGradesViewModel(); // Pass selected grade
-            uploadGrade.ShowDialog(); // Use ShowDialog to ensure modal behavior
+            var uploadGradesWindow = new UploadGrades();
+            uploadGradesWindow.DataContext = new UploadGradesViewModel();
+            uploadGradesWindow.ShowDialog();
         }
 
         private void AddSubject(object parameter)
         {
             try
             {
-                // Open a dialog to select a non-scholar student
                 var selectStudentWindow = new SelectStudent();
-                var selectStudentViewModel = new SelectStudentViewModel();
-                selectStudentWindow.DataContext = selectStudentViewModel;
+                selectStudentWindow.DataContext = new SelectStudentViewModel();
                 selectStudentWindow.ShowDialog();
-
-                // Refresh the grades list
-                Task.Run(LoadGradesAsync);
+                _ = LoadGradesAsync();
             }
             catch (Exception ex)
             {
@@ -266,8 +347,67 @@ namespace GradeVerification.ViewModel
             }
         }
 
+        #endregion
+
+        #region Validation (INotifyDataErrorInfo)
+
+        public bool HasErrors => _propertyErrors.Any();
+
+        public event EventHandler<DataErrorsChangedEventArgs> ErrorsChanged;
+
+        public IEnumerable GetErrors(string propertyName)
+        {
+            if (string.IsNullOrEmpty(propertyName))
+                return null;
+            return _propertyErrors.ContainsKey(propertyName) ? _propertyErrors[propertyName] : null;
+        }
+
+        private void AddError(string propertyName, string error)
+        {
+            if (!_propertyErrors.ContainsKey(propertyName))
+                _propertyErrors[propertyName] = new List<string>();
+
+            if (!_propertyErrors[propertyName].Contains(error))
+            {
+                _propertyErrors[propertyName].Add(error);
+                OnErrorsChanged(propertyName);
+            }
+        }
+
+        private void ClearErrors(string propertyName)
+        {
+            if (_propertyErrors.ContainsKey(propertyName))
+            {
+                _propertyErrors.Remove(propertyName);
+                OnErrorsChanged(propertyName);
+            }
+        }
+
+        private void OnErrorsChanged(string propertyName)
+        {
+            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+        }
+
+        // Sample validation: ensure the search text is not too long
+        private void ValidateSearchText()
+        {
+            ClearErrors(nameof(SearchText));
+            if (!string.IsNullOrEmpty(SearchText) && SearchText.Length > 100)
+            {
+                AddError(nameof(SearchText), "Search text cannot exceed 100 characters.");
+            }
+        }
+
+        #endregion
+
+        #region INotifyPropertyChanged Implementation
+
         public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged(string propertyName) =>
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        #endregion
     }
 }

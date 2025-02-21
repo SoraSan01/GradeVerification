@@ -3,6 +3,7 @@ using GradeVerification.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GradeVerification.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250217055342_FixStudentIdInDataBase")]
+    partial class FixStudentIdInDataBase
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -39,7 +42,7 @@ namespace GradeVerification.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AcademicPrograms", (string)null);
+                    b.ToTable("AcademicPrograms");
                 });
 
             modelBuilder.Entity("GradeVerification.Model.Grade", b =>
@@ -64,7 +67,7 @@ namespace GradeVerification.Migrations
 
                     b.HasIndex("SubjectId");
 
-                    b.ToTable("Grade", (string)null);
+                    b.ToTable("Grade");
                 });
 
             modelBuilder.Entity("GradeVerification.Model.Student", b =>
@@ -114,7 +117,7 @@ namespace GradeVerification.Migrations
 
                     b.HasIndex("ProgramId");
 
-                    b.ToTable("Students", (string)null);
+                    b.ToTable("Students");
                 });
 
             modelBuilder.Entity("GradeVerification.Model.Subject", b =>
@@ -155,7 +158,7 @@ namespace GradeVerification.Migrations
 
                     b.HasIndex("ProgramId");
 
-                    b.ToTable("Subjects", (string)null);
+                    b.ToTable("Subjects");
                 });
 
             modelBuilder.Entity("GradeVerification.Model.User", b =>
@@ -190,7 +193,7 @@ namespace GradeVerification.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("GradeVerification.Model.Grade", b =>

@@ -14,15 +14,14 @@ using System.Windows;
 using System.Windows.Input;
 using ToastNotifications;
 using ToastNotifications.Lifetime;
-using ToastNotifications.Position;
 using ToastNotifications.Messages;
+using ToastNotifications.Position;
 
 namespace GradeVerification.ViewModel
 {
     public class StudentDashboardViewModel : INotifyPropertyChanged
     {
-        private Notifier _notifier;
-
+        private readonly Notifier _notifier;
         public ObservableCollection<Student> Students { get; set; } = new ObservableCollection<Student>();
         private ObservableCollection<Student> _allStudents = new ObservableCollection<Student>();
 
@@ -30,74 +29,50 @@ namespace GradeVerification.ViewModel
         public ObservableCollection<string> Years { get; set; } = new ObservableCollection<string> { "First Year", "Second Year", "Third Year", "Fourth Year" };
         public ObservableCollection<string> Programs { get; set; } = new ObservableCollection<string>();
 
-
         private string _searchText;
-        private string _selectedSemester;
-        private string _selectedYear;
-        private string _selectedProgram;
-
         public string SearchText
         {
             get => _searchText;
-            set
-            {
-                _searchText = value;
-                OnPropertyChanged();
-                FilterStudents();
-            }
+            set { _searchText = value; OnPropertyChanged(); FilterStudents(); }
         }
 
+        private string _selectedSemester;
         public string SelectedSemester
         {
             get => _selectedSemester;
-            set
-            {
-                _selectedSemester = value;
-                OnPropertyChanged();
-                FilterStudents();
-            }
+            set { _selectedSemester = value; OnPropertyChanged(); FilterStudents(); }
         }
 
+        private string _selectedYear;
         public string SelectedYear
         {
             get => _selectedYear;
-            set
-            {
-                _selectedYear = value;
-                OnPropertyChanged();
-                FilterStudents();
-            }
+            set { _selectedYear = value; OnPropertyChanged(); FilterStudents(); }
         }
 
+        private string _selectedProgram;
         public string SelectedProgram
         {
             get => _selectedProgram;
-            set
-            {
-                _selectedProgram = value;
-                OnPropertyChanged();
-                FilterStudents();
-            }
+            set { _selectedProgram = value; OnPropertyChanged(); FilterStudents(); }
         }
 
+        // Commands for various actions.
         public ICommand AddStudentCommand { get; }
         public ICommand EditStudentCommand { get; }
         public ICommand DeleteStudentCommand { get; }
         public ICommand ShowGradeCommand { get; }
+        public ICommand UploadStudentCommand { get; }
 
         public StudentDashboardViewModel()
         {
             _notifier = new Notifier(cfg =>
             {
                 cfg.PositionProvider = new PrimaryScreenPositionProvider(
-                    corner: Corner.BottomRight,
-                    offsetX: 10,
-                    offsetY: 10);
-
+                    corner: Corner.BottomRight, offsetX: 10, offsetY: 10);
                 cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
                     notificationLifetime: TimeSpan.FromSeconds(3),
                     maximumNotificationCount: MaximumNotificationCount.FromCount(5));
-
                 cfg.Dispatcher = Application.Current.Dispatcher;
             });
 
@@ -105,22 +80,15 @@ namespace GradeVerification.ViewModel
             EditStudentCommand = new RelayCommand(EditStudent, CanModifyStudent);
             DeleteStudentCommand = new RelayCommand(async param => await DeleteStudent(param), CanModifyStudent);
             ShowGradeCommand = new RelayCommand(ShowGrade, CanModifyStudent);
+            UploadStudentCommand = new RelayCommand(UploadWindow);
 
+            // Load students initially.
             LoadStudentsAsync();
         }
 
-        private void ShowGrade(object parameter)
-        {
-            if (parameter is Student student)
-            {
-                var showGradeWindow = new ShowGradeWindow
-                {
-                    DataContext = new ShowGradeViewModel(student)
-                };
-                showGradeWindow.ShowDialog();
-            }
-        }
-
+        /// <summary>
+        /// Loads all students asynchronously and updates the master and filtered collections.
+        /// </summary>
         private async void LoadStudentsAsync()
         {
             try
@@ -128,7 +96,6 @@ namespace GradeVerification.ViewModel
                 using (var context = new ApplicationDbContext())
                 {
                     var studentList = await context.Students.Include(s => s.AcademicProgram).ToListAsync();
-
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         _allStudents.Clear();
@@ -139,21 +106,25 @@ namespace GradeVerification.ViewModel
                         {
                             _allStudents.Add(student);
                             Students.Add(student);
-
                             if (!Programs.Contains(student.AcademicProgram.ProgramCode))
                             {
                                 Programs.Add(student.AcademicProgram.ProgramCode);
                             }
                         }
+                        // Optionally, raise a property changed for an IsEmpty property.
                     });
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error loading students: {ex.Message}");
+                _notifier.ShowError("Error loading students.");
             }
         }
 
+        /// <summary>
+        /// Filters the student list based on the search text and filter selections.
+        /// </summary>
         private void FilterStudents()
         {
             Students.Clear();
@@ -161,17 +132,18 @@ namespace GradeVerification.ViewModel
             {
                 bool matchesSearch = string.IsNullOrWhiteSpace(SearchText) ||
                                      student.FullName.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                     student.SchoolId.ToString().Contains(SearchText);
-
-                bool matchesSemester = string.IsNullOrWhiteSpace(SelectedSemester) || student.Semester == SelectedSemester;
-                bool matchesYear = string.IsNullOrWhiteSpace(SelectedYear) || student.Year == SelectedYear;
-                bool matchesProgram = string.IsNullOrWhiteSpace(SelectedProgram) || student.AcademicProgram.ProgramCode == SelectedProgram;
+                                     student.SchoolId.Contains(SearchText);
+                bool matchesSemester = string.IsNullOrWhiteSpace(SelectedSemester) || student.Semester.Equals(SelectedSemester, StringComparison.OrdinalIgnoreCase);
+                bool matchesYear = string.IsNullOrWhiteSpace(SelectedYear) || student.Year.Equals(SelectedYear, StringComparison.OrdinalIgnoreCase);
+                bool matchesProgram = string.IsNullOrWhiteSpace(SelectedProgram) || student.AcademicProgram.ProgramCode.Equals(SelectedProgram, StringComparison.OrdinalIgnoreCase);
 
                 if (matchesSearch && matchesSemester && matchesYear && matchesProgram)
                 {
                     Students.Add(student);
                 }
             }
+
+            // Optionally, you could show a notification if Students.Count == 0.
         }
 
         private void AddStudent(object parameter)
@@ -191,8 +163,8 @@ namespace GradeVerification.ViewModel
         {
             if (parameter is Student studentToEdit)
             {
-                var editWindow = new EditStudent(); // Declare the window first
-                editWindow.DataContext = new EditStudentViewModel(studentToEdit, editWindow, LoadStudentsAsync); // Now use it
+                var editWindow = new EditStudent(); // Create the edit window.
+                editWindow.DataContext = new EditStudentViewModel(studentToEdit, editWindow, LoadStudentsAsync);
                 editWindow.Show();
             }
         }
@@ -210,14 +182,10 @@ namespace GradeVerification.ViewModel
                     {
                         using (var context = new ApplicationDbContext())
                         {
-                            if (parameter is Student student)
-                            {
-                                context.Students.Remove(student);
-                                context.SaveChanges();
-                                LoadStudentsAsync();
-                            }
+                            context.Students.Remove(studentToDelete);
+                            await context.SaveChangesAsync();
+                            LoadStudentsAsync();
                         }
-
                         ShowSuccessNotification("Student deleted successfully!");
                     }
                     catch (Exception ex)
@@ -230,6 +198,25 @@ namespace GradeVerification.ViewModel
         }
 
         private bool CanModifyStudent(object parameter) => parameter is Student;
+
+        private void ShowGrade(object parameter)
+        {
+            if (parameter is Student student)
+            {
+                var showGradeWindow = new ShowGradeWindow
+                {
+                    DataContext = new ShowGradeViewModel(student)
+                };
+                showGradeWindow.ShowDialog();
+            }
+        }
+
+        private void UploadWindow(object parameter)
+        {
+            var uploadStudent = new UploadStudent();
+            uploadStudent.DataContext = new UploadStudentViewModel();
+            uploadStudent.Show();
+        }
 
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -247,5 +234,4 @@ namespace GradeVerification.ViewModel
             _notifier.ShowError(message);
         }
     }
-
 }

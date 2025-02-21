@@ -6,7 +6,7 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:local="clr-namespace:GradeVerification.View.Admin.User_Controls"
              mc:Ignorable="d" 
-             MinHeight="640" MinWidth="1030">
+             MinHeight="600" MinWidth="1030">
     <Border CornerRadius="0 10 10 0" Background="#FAFAFA">
         <Grid>
             <Grid.RowDefinitions>
@@ -19,7 +19,6 @@
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="2*"/>
-                        <ColumnDefinition Width="1.5*"/>
                         <ColumnDefinition Width="1*"/>
                         <ColumnDefinition Width="1*"/>
                         <ColumnDefinition Width="Auto"/>
@@ -48,13 +47,13 @@
                             Foreground="White" FontSize="14" FontWeight="SemiBold" 
                             BorderBrush="Transparent" BorderThickness="0" Cursor="Hand" 
                             materialDesign:ButtonAssist.CornerRadius="8"
-                            Grid.Column="4" Command="{Binding AddSubjectCommand}"/>
+                            Grid.Column="3" Command="{Binding AddSubjectCommand}"/>
                     
                     <Button Content="Upload Subject" Height="40" Padding="20,0" Background="#28A745"
                             Foreground="White" FontSize="14" FontWeight="SemiBold" 
                             BorderBrush="Transparent" BorderThickness="0" Cursor="Hand" 
                             materialDesign:ButtonAssist.CornerRadius="8"
-                            Grid.Column="5" Command="{Binding BulkInsertCommand}"/>
+                            Grid.Column="4" Command="{Binding BulkInsertCommand}"/>
                 </Grid>
             </Border>
 

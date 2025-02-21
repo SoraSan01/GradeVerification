@@ -3,31 +3,31 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using GradeVerification.Commands;
 using GradeVerification.Data;
 using GradeVerification.Model;
-using Microsoft.EntityFrameworkCore;
-using GradeVerification.Commands;
 using GradeVerification.Service;
 using GradeVerification.View.Admin.Windows;
-using System.Text;
-using System.Security.Cryptography;
+using Microsoft.EntityFrameworkCore;
 using ToastNotifications;
 using ToastNotifications.Lifetime;
 using ToastNotifications.Position;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using ToastNotifications.Messages;
 
 namespace GradeVerification.ViewModel
 {
-    public class AddUserViewModel : INotifyPropertyChanged
+    public class AddUserViewModel : INotifyPropertyChanged, IDataErrorInfo
     {
         private Notifier _notifier;
-
         private readonly ApplicationDbContext _dbContext;
         private readonly UserService _userService;
+        private readonly Action _onUpdate;
 
         private string _firstName;
         private string _lastName;
@@ -39,58 +39,10 @@ namespace GradeVerification.ViewModel
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public string FirstName
-        {
-            get => _firstName;
-            set { _firstName = value; OnPropertyChanged(); }
-        }
-
-        public string LastName
-        {
-            get => _lastName;
-            set { _lastName = value; OnPropertyChanged(); }
-        }
-
-        public string Username
-        {
-            get => _username;
-            set { _username = value; OnPropertyChanged(); }
-        }
-
-        public string Email
-        {
-            get => _email;
-            set { _email = value; OnPropertyChanged(); }
-        }
-
-        public string Password
-        {
-            get => _password;
-            set { _password = value; OnPropertyChanged(); }
-        }
-
-        public string ConfirmPassword
-        {
-            get => _confirmPassword;
-            set { _confirmPassword = value; OnPropertyChanged(); }
-        }
-
-        public string SelectedRole
-        {
-            get => _selectedRole;
-            set { _selectedRole = value; OnPropertyChanged(); }
-        }
-
-        public ObservableCollection<string> Roles { get; set; } = new ObservableCollection<string> { "Admin", "Staff", "Encoder" };
-
-        public ICommand SaveUserCommand { get; }
-        public ICommand BackCommand { get; }
-
-        private readonly Action _onUpdate;
-
         public AddUserViewModel(ApplicationDbContext dbContext, Action onUpdate)
         {
             _dbContext = dbContext;
+            _onUpdate = onUpdate;
 
             _notifier = new Notifier(cfg =>
             {
@@ -98,64 +50,132 @@ namespace GradeVerification.ViewModel
                     corner: Corner.BottomRight,
                     offsetX: 10,
                     offsetY: 10);
-
                 cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
                     notificationLifetime: TimeSpan.FromSeconds(3),
                     maximumNotificationCount: MaximumNotificationCount.FromCount(5));
-
                 cfg.Dispatcher = Application.Current.Dispatcher;
             });
 
-            _onUpdate = onUpdate;
-
             _userService = new UserService(dbContext);
-            SaveUserCommand = new RelayCommand(async _ => await SaveUserAsync());
+            Roles = new ObservableCollection<string> { "Admin", "Staff", "Encoder" };
+
+            // Set up the command with a CanExecute predicate that checks for validation errors.
+            SaveUserCommand = new RelayCommand(async _ => await SaveUserAsync(), _ => !HasErrors());
             BackCommand = new RelayCommand(Back);
         }
 
-        private void Back(object obj)
+        // IDataErrorInfo implementation
+        public string Error => null;
+        public string this[string columnName]
         {
-            Application.Current.Windows.OfType<AddUser>().FirstOrDefault()?.Close();
+            get
+            {
+                switch (columnName)
+                {
+                    case nameof(FirstName):
+                        if (string.IsNullOrWhiteSpace(FirstName))
+                            return "First Name is required.";
+                        if (!FirstName.All(c => char.IsLetter(c) || char.IsWhiteSpace(c)))
+                            return "First Name can only contain letters and spaces.";
+                        break;
+                    case nameof(LastName):
+                        if (string.IsNullOrWhiteSpace(LastName))
+                            return "Last Name is required.";
+                        if (!LastName.All(c => char.IsLetter(c) || char.IsWhiteSpace(c)))
+                            return "Last Name can only contain letters and spaces.";
+                        break;
+                    case nameof(Username):
+                        if (string.IsNullOrWhiteSpace(Username))
+                            return "Username is required.";
+                        if (!Username.All(c => char.IsLetterOrDigit(c)))
+                            return "Username can only contain letters and numbers.";
+                        break;
+                    case nameof(Email):
+                        if (string.IsNullOrWhiteSpace(Email))
+                            return "Email is required.";
+                        if (!Regex.IsMatch(Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+                            return "Email format is invalid.";
+                        break;
+                    case nameof(Password):
+                        if (string.IsNullOrWhiteSpace(Password))
+                            return "Password is required.";
+                        if (Password.Length < 8)
+                            return "Password must be at least 8 characters long.";
+                        break;
+                    case nameof(ConfirmPassword):
+                        if (string.IsNullOrWhiteSpace(ConfirmPassword))
+                            return "Confirm Password is required.";
+                        if (Password != ConfirmPassword)
+                            return "Passwords do not match.";
+                        break;
+                    case nameof(SelectedRole):
+                        if (string.IsNullOrWhiteSpace(SelectedRole))
+                            return "Role selection is required.";
+                        break;
+                }
+                return null;
+            }
         }
+
+        // Helper to check if any property has a validation error.
+        private bool HasErrors()
+        {
+            string[] validatedProperties = { nameof(FirstName), nameof(LastName), nameof(Username),
+                                               nameof(Email), nameof(Password), nameof(ConfirmPassword), nameof(SelectedRole) };
+
+            return validatedProperties.Any(prop => !string.IsNullOrEmpty(this[prop]));
+        }
+
+        // Properties with OnPropertyChanged that also raise command state updates.
+        public string FirstName
+        {
+            get => _firstName;
+            set { _firstName = value; OnPropertyChanged(); }
+        }
+        public string LastName
+        {
+            get => _lastName;
+            set { _lastName = value; OnPropertyChanged(); }
+        }
+        public string Username
+        {
+            get => _username;
+            set { _username = value; OnPropertyChanged(); }
+        }
+        public string Email
+        {
+            get => _email;
+            set { _email = value; OnPropertyChanged(); }
+        }
+        // Note: For security reasons, PasswordBox cannot directly bind. 
+        // Use the PasswordChanged events to update these properties.
+        public string Password
+        {
+            get => _password;
+            set { _password = value; OnPropertyChanged(); }
+        }
+        public string ConfirmPassword
+        {
+            get => _confirmPassword;
+            set { _confirmPassword = value; OnPropertyChanged(); }
+        }
+        public string SelectedRole
+        {
+            get => _selectedRole;
+            set { _selectedRole = value; OnPropertyChanged(); }
+        }
+
+        public ObservableCollection<string> Roles { get; set; }
+
+        public ICommand SaveUserCommand { get; }
+        public ICommand BackCommand { get; }
 
         private async Task SaveUserAsync()
         {
-            if (string.IsNullOrWhiteSpace(FirstName) ||
-                string.IsNullOrWhiteSpace(LastName) ||
-                string.IsNullOrWhiteSpace(Username) ||
-                string.IsNullOrWhiteSpace(Email) ||
-                string.IsNullOrWhiteSpace(Password) ||
-                string.IsNullOrWhiteSpace(ConfirmPassword) ||
-                string.IsNullOrWhiteSpace(SelectedRole))
+            // Final check for validation errors.
+            if (HasErrors())
             {
-                ShowErrorNotification("Please fill in all fields!");
-                return;
-            }
-
-            // Validate First Name and Last Name (only letters)
-            if (!IsValidName(FirstName) || !IsValidName(LastName))
-            {
-                ShowErrorNotification("First and Last Name should only contain letters.");
-                return;
-            }
-
-            // Validate Username (only letters and numbers)
-            if (!IsValidUsername(Username))
-            {
-                ShowErrorNotification("Username should only contain letters and numbers.");
-                return;
-            }
-
-            // Validate Email format
-            if (!IsValidEmail(Email))
-            {
-                ShowErrorNotification("Please enter a valid email address.");
-                return;
-            }
-
-            if (Password != ConfirmPassword)
-            {
-                ShowErrorNotification("Passwords do not match!");
+                ShowErrorNotification("Please fix the validation errors before saving.");
                 return;
             }
 
@@ -182,12 +202,12 @@ namespace GradeVerification.ViewModel
 
                     var newUser = new User
                     {
-                        Id = newUserId,  // Assign generated ID
+                        Id = newUserId,
                         FirstName = FirstName,
                         LastName = LastName,
                         Username = Username,
                         Email = Email,
-                        Password = hashedPassword, // Store the hashed password
+                        Password = hashedPassword,
                         Role = SelectedRole
                     };
 
@@ -214,23 +234,9 @@ namespace GradeVerification.ViewModel
             }
         }
 
-        private bool IsValidName(string name)
+        private void Back(object obj)
         {
-            // Check if name contains only letters and spaces
-            return !string.IsNullOrEmpty(name) && name.All(c => Char.IsLetter(c) || Char.IsWhiteSpace(c));
-        }
-
-        private bool IsValidUsername(string username)
-        {
-            // Check if username contains only letters and numbers
-            return !string.IsNullOrEmpty(username) && username.All(c => Char.IsLetterOrDigit(c));
-        }
-
-        private bool IsValidEmail(string email)
-        {
-            // Regular expression for email validation
-            var emailRegex = new System.Text.RegularExpressions.Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
-            return emailRegex.IsMatch(email);
+            Application.Current.Windows.OfType<AddUser>().FirstOrDefault()?.Close();
         }
 
         private string HashPassword(string password)
@@ -243,7 +249,6 @@ namespace GradeVerification.ViewModel
             }
         }
 
-
         private void ClearFields()
         {
             FirstName = string.Empty;
@@ -251,8 +256,10 @@ namespace GradeVerification.ViewModel
             Username = string.Empty;
             Email = string.Empty;
             SelectedRole = null;
+            Password = string.Empty;
+            ConfirmPassword = string.Empty;
 
-            // Notify the View to clear the PasswordBoxes
+            // Notify the View to clear the PasswordBoxes if necessary.
             Application.Current.Dispatcher.Invoke(() =>
             {
                 if (Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w is AddUser) is AddUser window)
@@ -265,6 +272,8 @@ namespace GradeVerification.ViewModel
         protected void OnPropertyChanged([CallerMemberName] string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+            // Update the Save command's state if the validated property changes.
+            (SaveUserCommand as RelayCommand)?.RaiseCanExecuteChanged();
         }
 
         private void ShowSuccessNotification(string message)

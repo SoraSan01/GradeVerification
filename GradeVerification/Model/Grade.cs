@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel;
+using System.Globalization;
 
 namespace GradeVerification.Model
 {
@@ -29,9 +30,10 @@ namespace GradeVerification.Model
         {
             get
             {
-                if (decimal.TryParse(Score, out decimal numericGrade))
+                if (string.IsNullOrWhiteSpace(Score)) return null;
+                if (decimal.TryParse(Score, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal numericGrade))
                     return numericGrade;
-                return null; // Return null for non-numeric values like "INC"
+                return null;
             }
         }
 

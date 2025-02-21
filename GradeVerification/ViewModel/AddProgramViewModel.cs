@@ -55,6 +55,7 @@ namespace GradeVerification.ViewModel
 
         public ICommand SaveProgramCommand { get; }
         public ICommand CancelCommand { get; }
+        public string Error => null;
 
         private readonly ApplicationDbContext _dbContext;
 
@@ -79,6 +80,25 @@ namespace GradeVerification.ViewModel
 
             SaveProgramCommand = new RelayCommand(SaveProgram, CanSave);
             CancelCommand = new RelayCommand(Cancel);
+        }
+
+        public string this[string columnName]
+        {
+            get
+            {
+                switch (columnName)
+                {
+                    case nameof(ProgramCode):
+                        if (string.IsNullOrWhiteSpace(ProgramCode))
+                            return "Program Code is required.";
+                        break;
+                    case nameof(ProgramName):
+                        if (string.IsNullOrWhiteSpace(ProgramName))
+                            return "Program Name is required.";
+                        break;
+                }
+                return null;
+            }
         }
 
         private bool CanSave(object parameter)

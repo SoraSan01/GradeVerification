@@ -6,7 +6,7 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:local="clr-namespace:GradeVerification.View.Admin.User_Controls"
              mc:Ignorable="d"
-             MinHeight="640" MinWidth="1030">
+             MinHeight="600" MinWidth="1030">
 
     <Border CornerRadius="0 10 10 0" Background="#FAFAFA">
         <Grid>
@@ -32,7 +32,7 @@
                              materialDesign:HintAssist.Hint="Search Student..."
                              Style="{StaticResource MaterialDesignOutlinedTextBox}"
                              FontSize="14" BorderBrush="#E0E0E0" Grid.Column="0" Margin="0,0,10,0"
-                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
 
                     <!-- Semester ComboBox -->
                     <ComboBox Name="cbSemester" Height="40" Grid.Column="1" Margin="0,0,10,0"
@@ -54,7 +54,7 @@
 
                     <!-- Buttons -->
                     <StackPanel Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <!-- Add Subject for Non-Scholar Button -->
+                        <!-- Add Subject Button -->
                         <Button Content="Add Subject" Height="40" Padding="10,0" Background="#007BFF"
                                 Foreground="White" FontSize="14" FontWeight="SemiBold" 
                                 BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
@@ -66,7 +66,14 @@
                                 Foreground="White" FontSize="14" FontWeight="SemiBold" 
                                 BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
                                 materialDesign:ButtonAssist.CornerRadius="8"
-                                Command="{Binding UploadFileCommand}"/>
+                                Command="{Binding UploadFileCommand}" Margin="0,0,10,0"/>
+
+                        <!-- Input Grade Button -->
+                        <Button Content="Input Grade" Height="40" Padding="10,0" Background="#28A745"
+                                Foreground="White" FontSize="14" FontWeight="SemiBold" 
+                                BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
+                                materialDesign:ButtonAssist.CornerRadius="8"
+                                Command="{Binding EnterGradeCommand}"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -112,14 +119,6 @@
 
                         <DataGridTextColumn Header="Subject" Binding="{Binding Subject.SubjectCode}" Width="*"/>
 
-                        <DataGridTemplateColumn Header="Name" Width="*">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Student.FullName}" TextWrapping="Wrap" />
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-
                         <DataGridTemplateColumn Header="Professor" Width="*">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
@@ -153,13 +152,15 @@
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                         <!-- Grade Entry Button -->
-                                        <Button Style="{StaticResource GradeEntryButton}" Command="{Binding DataContext.InputGradeCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        <Button Style="{StaticResource GradeEntryButton}" 
+                                                Command="{Binding DataContext.InputGradeCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}" Margin="5">
                                             <materialDesign:PackIcon Kind="Input"/>
                                         </Button>
 
                                         <!-- Delete Button -->
-                                        <Button Style="{StaticResource gridRemoveButton}" Command="{Binding DataContext.DeleteGradeCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        <Button Style="{StaticResource gridRemoveButton}" 
+                                                Command="{Binding DataContext.DeleteGradeCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}" Margin="5">
                                             <materialDesign:PackIcon Kind="Delete"/>
                                         </Button>

@@ -40,5 +40,11 @@ namespace GradeVerification
                 viewModel.ConfirmPassword = (sender as PasswordBox).Password;
             }
         }
+
+        private void Card_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+                DragMove();
+        }
     }
 }

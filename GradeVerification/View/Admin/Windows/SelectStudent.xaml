@@ -16,19 +16,40 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Header with Search Bar -->
+            <!-- Header with Search and Filter ComboBoxes -->
             <Border Background="#FFFFFF" CornerRadius="10" Margin="20" Padding="15">
                 <Grid>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="3*"/>
                         <ColumnDefinition Width="2*"/>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="2*"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                             Height="40" Padding="10" Background="#F5F5F5" Width="300"
+                    <TextBox Grid.Column="0" 
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"  
+                             Height="40" Padding="10" Background="#F5F5F5" 
                              materialDesign:HintAssist.Hint="Search Student..." 
                              Style="{StaticResource MaterialDesignOutlinedTextBox}" 
-                             FontSize="14" BorderBrush="#E0E0E0" Grid.Column="0"/>
+                             FontSize="14" BorderBrush="#E0E0E0"/>
+
+                    <ComboBox Grid.Column="1"
+                              ItemsSource="{Binding YearOptions}" 
+                              SelectedItem="{Binding SelectedYear, UpdateSourceTrigger=PropertyChanged}" 
+                              Height="40" Margin="10,0"
+                              materialDesign:HintAssist.Hint="Year"/>
+
+                    <ComboBox Grid.Column="2"
+                              ItemsSource="{Binding SemesterOptions}" 
+                              SelectedItem="{Binding SelectedSemester, UpdateSourceTrigger=PropertyChanged}" 
+                              Height="40" Margin="10,0"
+                              materialDesign:HintAssist.Hint="Semester"/>
+
+                    <ComboBox Grid.Column="3"
+                              ItemsSource="{Binding ProgramOptions}" 
+                              SelectedItem="{Binding SelectedProgram, UpdateSourceTrigger=PropertyChanged}" 
+                              Height="40" Margin="10,0"
+                              materialDesign:HintAssist.Hint="Program"/>
                 </Grid>
             </Border>
 
@@ -40,7 +61,6 @@
                           CellStyle="{DynamicResource DataGridCellStyle1}"
                           ItemsSource="{Binding FilteredStudents}" SelectionMode="Single"
                           SelectedItem="{Binding SelectedStudent, Mode=TwoWay}">
-
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="School ID" Binding="{Binding SchoolId}" Width="*"/>
                         <DataGridTextColumn Header="Name" Binding="{Binding FullName}" Width="*"/>

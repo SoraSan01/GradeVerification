@@ -26,7 +26,8 @@ namespace GradeVerification.View.Admin.Windows
 
         private void Border_MouseDown(object sender, MouseButtonEventArgs e)
         {
-
+            if (e.LeftButton == MouseButtonState.Pressed)
+                DragMove();
         }
     }
 }

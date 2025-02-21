@@ -95,23 +95,23 @@
                                      materialDesign:HintAssist.Hint="Email"/>
 
                             <ComboBox Grid.Row="4" Grid.Column="0" Margin="10"
-                                      ItemsSource="{Binding Semesters}"
+                                      ItemsSource="{Binding Semesters}" IsEnabled="False"
                                       SelectedItem="{Binding Semester, UpdateSourceTrigger=PropertyChanged}"
                                       materialDesign:HintAssist.Hint="Select Semester"/>
 
                             <ComboBox Grid.Row="4" Grid.Column="1" Margin="10"
-                                      ItemsSource="{Binding Years}"
+                                      ItemsSource="{Binding Years}" IsEnabled="False"
                                       SelectedItem="{Binding Year, UpdateSourceTrigger=PropertyChanged}"
                                       materialDesign:HintAssist.Hint="Select Year"/>
 
                             <ComboBox Grid.Row="5" Grid.Column="0" Margin="10"
-                                      ItemsSource="{Binding ProgramList}"
+                                      ItemsSource="{Binding ProgramList}" IsEnabled="False"
                                       SelectedValue="{Binding ProgramId, UpdateSourceTrigger=PropertyChanged}"
-                                      DisplayMemberPath="ProgramName" SelectedValuePath="Id"
+                                      DisplayMemberPath="ProgramCode" SelectedValuePath="Id"
                                       materialDesign:HintAssist.Hint="Select Program"/>
 
                             <ComboBox Grid.Row="5" Grid.Column="1" Margin="10"
-                                      ItemsSource="{Binding Statuses}"
+                                      ItemsSource="{Binding Statuses}" IsEnabled="False"
                                       SelectedItem="{Binding SelectedStatus, UpdateSourceTrigger=PropertyChanged}"
                                       materialDesign:HintAssist.Hint="Select Status"/>
 

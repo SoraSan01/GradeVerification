@@ -1,0 +1,98 @@
+﻿<Window x:Class="GradeVerification.View.Admin.Windows.EnterGrade"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        WindowStyle="None" WindowStartupLocation="CenterScreen"
+        AllowsTransparency="True" Background="Transparent"
+        Title="Encode Grade" Height="550" Width="750">
+
+    <Border CornerRadius="5" Background="#ffffff" MouseDown="Border_MouseDown">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <StackPanel Orientation="Horizontal" Margin="20">
+                <TextBlock Text="Enter Grades" FontSize="16" FontWeight="SemiBold" Foreground="#4880ff"/>
+            </StackPanel>
+
+            <!-- Main Section -->
+            <Border Grid.Row="1" Background="#f2f5f8" CornerRadius="0 0 5 5">
+                <Grid Margin="30">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- School ID Input and Filter Controls -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0 0 0 10">
+                        <TextBlock Text="School ID: " FontSize="14" VerticalAlignment="Center"/>
+                        <TextBox Text="{Binding SchoolId, UpdateSourceTrigger=PropertyChanged}" Width="100" Margin="10 0"/>
+                        <Button Content="Load Subjects" Command="{Binding LoadSubjectsCommand}" Width="120" Margin="10 0"/>
+                        <ComboBox ItemsSource="{Binding SemesterOptions}" 
+                                  SelectedItem="{Binding SelectedSemester, UpdateSourceTrigger=PropertyChanged}" 
+                                  materialDesign:HintAssist.Hint="Semester"
+                                  Width="120" Margin="10 0"/>
+                        <ComboBox ItemsSource="{Binding YearOptions}" 
+                                  SelectedItem="{Binding SelectedYear, UpdateSourceTrigger=PropertyChanged}" 
+                                  materialDesign:HintAssist.Hint="Year"
+                                  Width="120" Margin="10 0"/>
+                    </StackPanel>
+
+                    <!-- DataGrid for Grade Input -->
+                    <Border Grid.Row="2" Background="#FFFFFF" CornerRadius="10" Margin="20" Padding="0">
+                        <DataGrid ItemsSource="{Binding FilteredSubjects}" Style="{StaticResource DataGridStyle1}"
+                                  RowStyle="{DynamicResource DataGridRowStyle1}"
+                                  ColumnHeaderStyle="{DynamicResource DataGridColumnHeaderStyle1}"
+                                  CellStyle="{DynamicResource DataGridCellStyle1}" 
+                                  AutoGenerateColumns="False">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Subject" Binding="{Binding SubjectCode}" IsReadOnly="True"/>
+                                <!-- Replaced DataGridTextColumn with a template column for editing GradeScore -->
+                                <DataGridTemplateColumn Header="Grade">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Border Background="LightGreen" Padding="2">
+                                                <TextBlock Text="{Binding GradeScore}" 
+                                                   HorizontalAlignment="Center" 
+                                                   VerticalAlignment="Center"/>
+                                            </Border>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                    <DataGridTemplateColumn.CellEditingTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding GradeScore, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True}" 
+                                                     Background="LightGreen" 
+                                                     BorderBrush="DarkOrange" 
+                                                     BorderThickness="2"
+                                                     FontSize="16"
+                                                     Padding="4"
+                                                     HorizontalContentAlignment="Center"
+                                                     VerticalContentAlignment="Center"
+                                                     ToolTip="Click here to enter the grade"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellEditingTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
+
+                    <!-- Buttons -->
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0 10 0 0">
+                        <Button Content="Cancel" Command="{Binding CancelCommand}" Width="100" 
+                                Style="{StaticResource secondaryButton}"/>
+                        <Button Content="Save Grades" Command="{Binding SaveCommand}" Width="150" Margin="10 0 0 0"
+                                Style="{StaticResource mainButton}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

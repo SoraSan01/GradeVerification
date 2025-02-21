@@ -45,8 +45,8 @@ namespace GradeVerification.Service
         {
             var parts = originalName.Split(new[] { ',' }, 2);
             return parts.Length == 2
-                ? $"{parts[1].Trim()} {parts[0].Trim()}"
-                : originalName;
+                ? $"{parts[0].Trim()} {parts[1].Trim()}".Replace(",", "") // Keep LastName FirstName order
+                : originalName.Replace(",", "");
         }
     }
 }

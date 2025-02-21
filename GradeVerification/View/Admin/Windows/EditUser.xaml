@@ -81,7 +81,7 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
-                            <!--Form Title-->
+                            <!-- Form Title -->
                             <StackPanel Orientation="Horizontal" Margin="20 20 0 0">
                                 <Border CornerRadius="50" BorderThickness="1.5" BorderBrush="#efefef">
                                     <Ellipse Width="40" Height="40">
@@ -96,20 +96,26 @@
                             <Separator Grid.Row="1" Grid.ColumnSpan="2" Height="1" Background="#e1e6eb"/>
 
                             <!-- First Name & Last Name -->
-                            <TextBox Grid.Row="2" Grid.Column="0" Margin="10" materialDesign:HintAssist.Hint="First Name"
-                                     Text="{Binding User.FirstName, UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBox Grid.Row="2" Grid.Column="1" Margin="10" materialDesign:HintAssist.Hint="Last Name"
-                                     Text="{Binding User.LastName, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBox Grid.Row="2" Grid.Column="0" Margin="10" 
+                                     materialDesign:HintAssist.Hint="First Name"
+                                     Text="{Binding FirstName, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" Margin="10" 
+                                     materialDesign:HintAssist.Hint="Last Name"
+                                     Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
 
                             <!-- Username & Email -->
-                            <TextBox Grid.Row="3" Grid.Column="0" Margin="10" materialDesign:HintAssist.Hint="Username"
-                                     Text="{Binding User.Username, UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBox Grid.Row="3" Grid.Column="1" Margin="10" materialDesign:HintAssist.Hint="Email"
-                                     Text="{Binding User.Email, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBox Grid.Row="3" Grid.Column="0" Margin="10" 
+                                     materialDesign:HintAssist.Hint="Username"
+                                     Text="{Binding Username, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
+                            <TextBox Grid.Row="3" Grid.Column="1" Margin="10" 
+                                     materialDesign:HintAssist.Hint="Email"
+                                     Text="{Binding Email, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
 
                             <!-- Role Selection -->
-                            <ComboBox Grid.Row="4" Grid.Column="0" Margin="10" materialDesign:HintAssist.Hint="Select Role"
-                                      ItemsSource="{Binding Roles}" SelectedItem="{Binding User.Role}"/>
+                            <ComboBox Grid.Row="4" Grid.Column="0" Margin="10" 
+                                      materialDesign:HintAssist.Hint="Select Role"
+                                      ItemsSource="{Binding Roles}" 
+                                      SelectedItem="{Binding Role, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
 
                             <!-- Buttons -->
                             <StackPanel Grid.Row="5" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="20">
