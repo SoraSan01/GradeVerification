@@ -32,6 +32,7 @@ namespace GradeVerification.ViewModel
         private string _year;
         private string _programId;
         private string _selectedStatus;
+        private string _schoolYear; // New field for School Year
 
         private readonly EditStudent _editWindow;
         private readonly Action _onUpdate;
@@ -61,7 +62,7 @@ namespace GradeVerification.ViewModel
             _onUpdate = onUpdate ?? throw new ArgumentNullException(nameof(onUpdate));
             _programService = new AcademicProgramService();
 
-            // Initialize properties, including MiddleName
+            // Initialize properties, including the new SchoolYear property
             SchoolId = student.SchoolId;
             FirstName = student.FirstName;
             MiddleName = student.MiddleName; // Initialize MiddleName from the student object
@@ -72,6 +73,7 @@ namespace GradeVerification.ViewModel
             Year = student.Year;
             ProgramId = student.ProgramId;
             SelectedStatus = student.Status;
+            SchoolYear = student.SchoolYear; // Initialize SchoolYear
 
             // Dropdown options
             Statuses = new ObservableCollection<string> { "Scholar", "Non-Scholar" };
@@ -97,53 +99,50 @@ namespace GradeVerification.ViewModel
             get => _firstName;
             set { _firstName = value; OnPropertyChanged(); }
         }
-
         public string MiddleName
         {
             get => _middleName;
             set { _middleName = value; OnPropertyChanged(); }
         }
-
         public string LastName
         {
             get => _lastName;
             set { _lastName = value; OnPropertyChanged(); }
         }
-
         public string StudentId
         {
             get => _studentId;
             set { _studentId = value; OnPropertyChanged(); }
         }
-
         public string Email
         {
             get => _email;
             set { _email = value; OnPropertyChanged(); }
         }
-
         public string Semester
         {
             get => _semester;
             set { _semester = value; OnPropertyChanged(); }
         }
-
         public string Year
         {
             get => _year;
             set { _year = value; OnPropertyChanged(); }
         }
-
         public string ProgramId
         {
             get => _programId;
             set { _programId = value; OnPropertyChanged(); }
         }
-
         public string SelectedStatus
         {
             get => _selectedStatus;
             set { _selectedStatus = value; OnPropertyChanged(); }
+        }
+        public string SchoolYear
+        {
+            get => _schoolYear;
+            set { _schoolYear = value; OnPropertyChanged(); }
         }
 
         public ObservableCollection<string> Semesters { get; }
@@ -168,7 +167,7 @@ namespace GradeVerification.ViewModel
                         return;
                     }
 
-                    // Update student details including MiddleName
+                    // Update student details including MiddleName and SchoolYear
                     student.SchoolId = SchoolId;
                     student.FirstName = FirstName;
                     student.MiddleName = MiddleName; // Update MiddleName
@@ -178,6 +177,7 @@ namespace GradeVerification.ViewModel
                     student.Year = Year;
                     student.ProgramId = ProgramId;
                     student.Status = SelectedStatus;
+                    // SchoolYear is not updated since it's read-only in this view
 
                     context.SaveChanges();
                     ShowSuccessNotification("Student information updated successfully.");

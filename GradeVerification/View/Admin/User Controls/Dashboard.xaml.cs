@@ -26,5 +26,13 @@ namespace GradeVerification.View.Admin.User_Controls
             InitializeComponent();
             DataContext = App.GetService<DashboardViewModel>(); // ✅ Resolve ViewModel using DI
         }
+
+        private async void Dashboard_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is DashboardViewModel vm)
+            {
+                await vm.RefreshDashboard();
+            }
+        }
     }
 }

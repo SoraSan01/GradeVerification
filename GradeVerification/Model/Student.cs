@@ -37,7 +37,11 @@ namespace GradeVerification.Model
 
         [Required]
         [MaxLength(20)]
-        public string Year { get; set; } // e.g., "1st Year", "2nd Year"
+        public string Year { get; set; } // e.g., "1st Year", "2nd Year" (student level)
+
+        [Required]
+        [MaxLength(20)]
+        public string SchoolYear { get; set; } // e.g., "2022-2023" (academic year)
 
         [Required]
         [MaxLength(50)]

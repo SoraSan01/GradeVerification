@@ -16,7 +16,8 @@ namespace GradeVerification.Data
         public DbSet<Subject> Subjects { get; set; }
         public DbSet<Student> Students { get; set; }
         public DbSet<Grade> Grade { get; set; }
-
+        public DbSet<SchoolYear> SchoolYears { get; set; }
+        public DbSet<YearLevel> YearLevels { get; set; }
 
         public ApplicationDbContext() { }
 

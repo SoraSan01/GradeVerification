@@ -7,6 +7,8 @@ using LiveCharts;
 using LiveCharts.Wpf;
 using GradeVerification.Repository;
 using GradeVerification.Model;
+using System.Timers;
+using GradeVerification.Commands; // Using System.Timers.Timer
 
 namespace GradeVerification.ViewModel
 {
@@ -38,7 +40,7 @@ namespace GradeVerification.ViewModel
             set { _programsCount = value; OnPropertyChanged(); OnPropertyChanged(nameof(ProgramsCountDisplay)); }
         }
 
-        // These properties format the integer counts as strings for display.
+        // Formatted display properties.
         public string StudentsCountDisplay => StudentsCount.ToString();
         public string CoursesCountDisplay => CoursesCount.ToString();
         public string ProgramsCountDisplay => ProgramsCount.ToString();
@@ -46,6 +48,12 @@ namespace GradeVerification.ViewModel
         public SeriesCollection SeriesCollection { get; set; }
         public string[] Labels { get; set; }
         public Func<double, string> Formatter { get; set; }
+
+        // Use non-generic RelayCommand.
+        public RelayCommand RefreshDashboardCommand { get; }
+
+        // Using the System.Timers.Timer (fully qualified) to avoid ambiguity.
+        private System.Timers.Timer _refreshTimer;
 
         public DashboardViewModel(IRepository<Student> studentRepo, IRepository<Subject> subjectRepo, IRepository<AcademicProgram> programRepo)
         {
@@ -88,7 +96,8 @@ namespace GradeVerification.ViewModel
             Labels = new[] { "Jan", "Feb", "Mar", "Apr", "May", "Jun" };
             Formatter = value => value.ToString("N");
 
-            // Load data asynchronously; fire and forget.
+            // Initialize the refresh command.
+            RefreshDashboardCommand = new RelayCommand(async _ => await RefreshDashboard());
             _ = LoadDataAsync();
         }
 
@@ -109,9 +118,14 @@ namespace GradeVerification.ViewModel
             }
             catch (Exception ex)
             {
-                // Log the error (or show a message as needed).
                 System.Diagnostics.Debug.WriteLine("Error loading dashboard data: " + ex.Message);
             }
+        }
+
+        public async Task RefreshDashboard()
+        {
+            await LoadDataAsync();
+            // Optionally, update other dashboard items (like charts) here.
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
