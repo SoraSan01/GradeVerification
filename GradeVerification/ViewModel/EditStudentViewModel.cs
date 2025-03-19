@@ -11,7 +11,6 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
 using ToastNotifications;
-using ToastNotifications;
 using ToastNotifications.Lifetime;
 using ToastNotifications.Messages;
 using ToastNotifications.Position;
@@ -25,6 +24,7 @@ namespace GradeVerification.ViewModel
 
         private string _schoolId;
         private string _firstName;
+        private string _middleName; // Added MiddleName field
         private string _lastName;
         private string _studentId;
         private string _email;
@@ -61,9 +61,10 @@ namespace GradeVerification.ViewModel
             _onUpdate = onUpdate ?? throw new ArgumentNullException(nameof(onUpdate));
             _programService = new AcademicProgramService();
 
-            // Initialize properties
+            // Initialize properties, including MiddleName
             SchoolId = student.SchoolId;
             FirstName = student.FirstName;
+            MiddleName = student.MiddleName; // Initialize MiddleName from the student object
             LastName = student.LastName;
             StudentId = student.Id;
             Email = student.Email;
@@ -95,6 +96,12 @@ namespace GradeVerification.ViewModel
         {
             get => _firstName;
             set { _firstName = value; OnPropertyChanged(); }
+        }
+
+        public string MiddleName
+        {
+            get => _middleName;
+            set { _middleName = value; OnPropertyChanged(); }
         }
 
         public string LastName
@@ -161,9 +168,10 @@ namespace GradeVerification.ViewModel
                         return;
                     }
 
-                    // Update student details
+                    // Update student details including MiddleName
                     student.SchoolId = SchoolId;
                     student.FirstName = FirstName;
+                    student.MiddleName = MiddleName; // Update MiddleName
                     student.LastName = LastName;
                     student.Email = Email;
                     student.Semester = Semester;
@@ -175,9 +183,7 @@ namespace GradeVerification.ViewModel
                     ShowSuccessNotification("Student information updated successfully.");
 
                     string currentUsername = Environment.UserName;
-
                     _activityLogService.LogActivity("Student", $"Student Edit by {currentUsername}", "Student");
-
                 }
 
                 _onUpdate?.Invoke();
@@ -189,12 +195,12 @@ namespace GradeVerification.ViewModel
                 ShowErrorNotification("Error updating student.");
             }
         }
-            
+
         private void LoadData()
         {
             try
             {
-                var programs = _programService.GetPrograms() ?? new List<AcademicProgram>();
+                var programs = _programService.GetPrograms() ?? new System.Collections.Generic.List<AcademicProgram>();
 
                 ProgramList.Clear();
                 foreach (var program in programs)
@@ -226,6 +232,5 @@ namespace GradeVerification.ViewModel
         {
             _notifier.ShowError(message);
         }
-
     }
 }

@@ -60,12 +60,21 @@
                         <Grid Margin="20 0">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
+                                <!-- Form Title -->
                                 <RowDefinition Height="Auto"/>
+                                <!-- Separator -->
                                 <RowDefinition Height="Auto"/>
+                                <!-- First and Last Name -->
                                 <RowDefinition Height="Auto"/>
+                                <!-- Middle Name -->
                                 <RowDefinition Height="Auto"/>
+                                <!-- Student ID and Email -->
                                 <RowDefinition Height="Auto"/>
+                                <!-- Semester and Year -->
                                 <RowDefinition Height="Auto"/>
+                                <!-- Program and Status -->
+                                <RowDefinition Height="Auto"/>
+                                <!-- Buttons -->
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -73,13 +82,13 @@
                             </Grid.ColumnDefinitions>
 
                             <!-- Form Title -->
-                            <StackPanel Orientation="Horizontal" Margin="20 20 0 0">
+                            <StackPanel Orientation="Horizontal" Margin="20 20 0 0" Grid.Row="0">
                                 <materialDesign:PackIcon Kind="Account" Width="40" Height="40" Foreground="#374655"/>
                                 <TextBlock Text="Student Details" Foreground="#374655" FontSize="18" Margin="10 0 0 0"/>
                             </StackPanel>
                             <Separator Grid.Row="1" Grid.ColumnSpan="2" Height="1" Background="#e1e6eb"/>
 
-                            <!-- Inputs with Bindings -->
+                            <!-- First and Last Name -->
                             <TextBox Grid.Row="2" Grid.Column="0" Margin="10"
                                      Text="{Binding FirstName, UpdateSourceTrigger=PropertyChanged}"
                                      materialDesign:HintAssist.Hint="First Name"/>
@@ -87,35 +96,42 @@
                                      Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged}"
                                      materialDesign:HintAssist.Hint="Last Name"/>
 
-                            <TextBox Grid.Row="3" Grid.Column="0" Margin="10" IsReadOnly="True"
+                            <!-- Middle Name -->
+                            <TextBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Margin="10"
+                                     Text="{Binding MiddleName, UpdateSourceTrigger=PropertyChanged}"
+                                     materialDesign:HintAssist.Hint="Middle Name"/>
+
+                            <!-- Student ID and Email -->
+                            <TextBox Grid.Row="4" Grid.Column="0" Margin="10" IsReadOnly="True"
                                      Text="{Binding SchoolId, UpdateSourceTrigger=PropertyChanged}"
-                                     materialDesign:HintAssist.Hint="Student ID (Read-Only)"/>
-                            <TextBox Grid.Row="3" Grid.Column="1" Margin="10"
+                                     materialDesign:HintAssist.Hint="Student ID"/>
+                            <TextBox Grid.Row="4" Grid.Column="1" Margin="10"
                                      Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}"
                                      materialDesign:HintAssist.Hint="Email"/>
 
-                            <ComboBox Grid.Row="4" Grid.Column="0" Margin="10"
-                                      ItemsSource="{Binding Semesters}" IsEnabled="False"
+                            <!-- Semester and Year -->
+                            <ComboBox Grid.Row="5" Grid.Column="0" Margin="10" IsEnabled="False"
+                                      ItemsSource="{Binding Semesters}"
                                       SelectedItem="{Binding Semester, UpdateSourceTrigger=PropertyChanged}"
                                       materialDesign:HintAssist.Hint="Select Semester"/>
-
-                            <ComboBox Grid.Row="4" Grid.Column="1" Margin="10"
-                                      ItemsSource="{Binding Years}" IsEnabled="False"
+                            <ComboBox Grid.Row="5" Grid.Column="1" Margin="10" IsEnabled="False"
+                                      ItemsSource="{Binding Years}"
                                       SelectedItem="{Binding Year, UpdateSourceTrigger=PropertyChanged}"
                                       materialDesign:HintAssist.Hint="Select Year"/>
 
-                            <ComboBox Grid.Row="5" Grid.Column="0" Margin="10"
-                                      ItemsSource="{Binding ProgramList}" IsEnabled="False"
+                            <!-- Program and Status -->
+                            <ComboBox Grid.Row="6" Grid.Column="0" Margin="10" IsEnabled="False"
+                                      ItemsSource="{Binding ProgramList}"
                                       SelectedValue="{Binding ProgramId, UpdateSourceTrigger=PropertyChanged}"
                                       DisplayMemberPath="ProgramCode" SelectedValuePath="Id"
                                       materialDesign:HintAssist.Hint="Select Program"/>
-
-                            <ComboBox Grid.Row="5" Grid.Column="1" Margin="10"
-                                      ItemsSource="{Binding Statuses}" IsEnabled="False"
+                            <ComboBox Grid.Row="6" Grid.Column="1" Margin="10" IsEnabled="False"
+                                      ItemsSource="{Binding Statuses}"
                                       SelectedItem="{Binding SelectedStatus, UpdateSourceTrigger=PropertyChanged}"
                                       materialDesign:HintAssist.Hint="Select Status"/>
 
-                            <StackPanel Grid.Row="6" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="20">
+                            <!-- Buttons -->
+                            <StackPanel Grid.Row="7" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="20">
                                 <Button Content="Back" Width="100" Command="{Binding BackCommand}"
                                         Style="{StaticResource secondaryButton}"/>
                                 <Button Content="Update Student" Width="150" Margin="10 0 0 0"

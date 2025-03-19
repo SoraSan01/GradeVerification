@@ -5,6 +5,7 @@ using GradeVerification.Service;
 using GradeVerification.View.Admin.Windows;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -17,7 +18,6 @@ using ToastNotifications;
 using ToastNotifications.Lifetime;
 using ToastNotifications.Messages;
 using ToastNotifications.Position;
-using System.Text.RegularExpressions;
 
 namespace GradeVerification.ViewModel
 {
@@ -26,19 +26,45 @@ namespace GradeVerification.ViewModel
         private Notifier _notifier;
         private readonly AcademicProgramService _programService;
         private readonly ApplicationDbContext _context;
-
         private readonly ActivityLogService _activityLogService;
-
 
         private string _studentId;
         private string _schoolId;
         private string _firstName;
+        private string _middleName;  // new field for MiddleName
         private string _lastName;
         private string _email;
         private string _semester;
         private string _year;
         private string _programId;
         private string _status;
+
+        // Dictionary to track if a property has been modified ("touched")
+        private readonly Dictionary<string, bool> _propertyTouched = new Dictionary<string, bool>();
+
+        // Helper method to mark a property as touched.
+        private void MarkPropertyAsTouched(string propertyName)
+        {
+            if (!_propertyTouched.ContainsKey(propertyName))
+                _propertyTouched[propertyName] = true;
+        }
+
+        // Helper method to mark all properties as touched (e.g., on Save)
+        private void MarkAllPropertiesAsTouched()
+        {
+            var properties = new[]
+            {
+                nameof(SchoolId), nameof(FirstName), nameof(LastName),
+                nameof(Email), nameof(Semester), nameof(Year),
+                nameof(ProgramId), nameof(Status)
+            };
+
+            foreach (var prop in properties)
+            {
+                if (!_propertyTouched.ContainsKey(prop))
+                    _propertyTouched[prop] = true;
+            }
+        }
 
         public string StudentId
         {
@@ -52,6 +78,7 @@ namespace GradeVerification.ViewModel
             set
             {
                 _schoolId = value;
+                MarkPropertyAsTouched(nameof(SchoolId));
                 OnPropertyChanged();
                 LoadStudentIfExists();
                 (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged();
@@ -61,43 +88,50 @@ namespace GradeVerification.ViewModel
         public string FirstName
         {
             get => _firstName;
-            set { _firstName = value; OnPropertyChanged(); (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
+            set { _firstName = value; MarkPropertyAsTouched(nameof(FirstName)); OnPropertyChanged(); (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
+        }
+
+        // New MiddleName property
+        public string MiddleName
+        {
+            get => _middleName;
+            set { _middleName = value; MarkPropertyAsTouched(nameof(MiddleName)); OnPropertyChanged(); (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
         }
 
         public string LastName
         {
             get => _lastName;
-            set { _lastName = value; OnPropertyChanged(); (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
+            set { _lastName = value; MarkPropertyAsTouched(nameof(LastName)); OnPropertyChanged(); (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
         }
 
         public string Email
         {
             get => _email;
-            set { _email = value; OnPropertyChanged(); (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
+            set { _email = value; MarkPropertyAsTouched(nameof(Email)); OnPropertyChanged(); (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
         }
 
         public string Semester
         {
             get => _semester;
-            set { _semester = value; OnPropertyChanged(); (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
+            set { _semester = value; MarkPropertyAsTouched(nameof(Semester)); OnPropertyChanged(); (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
         }
 
         public string Year
         {
             get => _year;
-            set { _year = value; OnPropertyChanged(); (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
+            set { _year = value; MarkPropertyAsTouched(nameof(Year)); OnPropertyChanged(); (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
         }
 
         public string ProgramId
         {
             get => _programId;
-            set { _programId = value; OnPropertyChanged(); (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
+            set { _programId = value; MarkPropertyAsTouched(nameof(ProgramId)); OnPropertyChanged(); (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
         }
 
         public string Status
         {
             get => _status;
-            set { _status = value; OnPropertyChanged(); (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
+            set { _status = value; MarkPropertyAsTouched(nameof(Status)); OnPropertyChanged(); (SaveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
         }
 
         public ObservableCollection<string> Statuses { get; set; }
@@ -112,7 +146,6 @@ namespace GradeVerification.ViewModel
 
         public AddStudentViewModel(Action onUpdate)
         {
-
             _activityLogService = new ActivityLogService();
 
             _notifier = new Notifier(cfg =>
@@ -140,7 +173,6 @@ namespace GradeVerification.ViewModel
 
             LoadPrograms();
 
-            // Use a can-execute delegate that checks our validations.
             SaveStudentCommand = new RelayCommand(async param => await SaveStudent(), CanSaveStudent);
             BackCommand = new RelayCommand(Back);
         }
@@ -156,6 +188,7 @@ namespace GradeVerification.ViewModel
             if (existingStudent != null)
             {
                 FirstName = existingStudent.FirstName;
+                MiddleName = existingStudent.MiddleName; // load middle name if exists
                 LastName = existingStudent.LastName;
                 Email = existingStudent.Email;
 
@@ -181,19 +214,22 @@ namespace GradeVerification.ViewModel
 
         private async Task SaveStudent()
         {
+            // Mark all fields as touched so that any errors are visible.
+            MarkAllPropertiesAsTouched();
+
+            if (!CanSaveStudent(null))
+            {
+                ShowErrorNotification("Please fill in all fields correctly.");
+                return;
+            }
+
             try
             {
-                // Double-check validation (though the command should be disabled if invalid)
-                if (!CanSaveStudent(null))
-                {
-                    ShowErrorNotification("Please fill in all fields correctly.");
-                    return;
-                }
-
-                // Check if a student with the same SchoolId, FirstName, LastName, and Email exists
+                // Check if a student with the same details exists (now also comparing MiddleName)
                 var existingStudent = await _context.Students
                     .Where(s => s.SchoolId == SchoolId &&
                                 s.FirstName == FirstName &&
+                                s.MiddleName == MiddleName &&
                                 s.LastName == LastName &&
                                 s.Email == Email)
                     .FirstOrDefaultAsync();
@@ -210,11 +246,11 @@ namespace GradeVerification.ViewModel
                     }
                 }
 
-                // Create new student record
                 var newStudent = new Student
                 {
                     SchoolId = SchoolId,
                     FirstName = FirstName,
+                    MiddleName = MiddleName, // set middle name
                     LastName = LastName,
                     Email = Email,
                     Semester = Semester,
@@ -224,9 +260,8 @@ namespace GradeVerification.ViewModel
                 };
 
                 _context.Students.Add(newStudent);
-                await _context.SaveChangesAsync(); // Save to generate the student Id
+                await _context.SaveChangesAsync();
 
-                // Enroll subjects if applicable (scholar or non-summer semester)
                 if (Status.Equals("Scholar", StringComparison.OrdinalIgnoreCase) ||
                     (!Semester.Equals("Summer", StringComparison.OrdinalIgnoreCase)))
                 {
@@ -256,14 +291,12 @@ namespace GradeVerification.ViewModel
                 }
 
                 ClearForm();
-                LoadPrograms(); // Refresh program list if needed
+                LoadPrograms();
                 ShowSuccessNotification("Student saved successfully!");
 
                 string currentUsername = Environment.UserName;
-
                 _activityLogService.LogActivity("Student", "Add", $"Student added by {currentUsername}");
-
-                _onUpdate?.Invoke(); // Notify main view to refresh UI
+                _onUpdate?.Invoke();
             }
             catch (Exception ex)
             {
@@ -276,12 +309,15 @@ namespace GradeVerification.ViewModel
         {
             SchoolId = string.Empty;
             FirstName = string.Empty;
+            MiddleName = string.Empty; // clear middle name field
             LastName = string.Empty;
             Email = string.Empty;
             Semester = null;
             Year = null;
             ProgramId = null;
             Status = null;
+            // Optionally, clear the touched state if you want to hide errors again.
+            _propertyTouched.Clear();
         }
 
         private void Back(object parameter)
@@ -295,6 +331,10 @@ namespace GradeVerification.ViewModel
         {
             get
             {
+                // Only validate if the property has been touched.
+                if (!_propertyTouched.ContainsKey(columnName))
+                    return null;
+
                 string error = null;
                 switch (columnName)
                 {
@@ -306,6 +346,7 @@ namespace GradeVerification.ViewModel
                         if (string.IsNullOrWhiteSpace(FirstName))
                             error = "First name is required.";
                         break;
+                    // MiddleName can be optional or you can add rules if needed.
                     case nameof(LastName):
                         if (string.IsNullOrWhiteSpace(LastName))
                             error = "Last name is required.";
@@ -341,7 +382,6 @@ namespace GradeVerification.ViewModel
 
         private bool CanSaveStudent(object parameter)
         {
-            // All validation errors must be null or empty
             return string.IsNullOrEmpty(this[nameof(SchoolId)]) &&
                    string.IsNullOrEmpty(this[nameof(FirstName)]) &&
                    string.IsNullOrEmpty(this[nameof(LastName)]) &&
@@ -356,7 +396,6 @@ namespace GradeVerification.ViewModel
         {
             try
             {
-                // Using MailAddress to validate email format
                 var addr = new MailAddress(email);
                 return addr.Address == email;
             }

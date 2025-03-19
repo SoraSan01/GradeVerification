@@ -150,9 +150,6 @@ namespace GradeVerification.ViewModel
                         case "Staff":
                             new StaffWindow(_dbContext, user).Show();
                             break;
-                        case "Encoder":
-                            new EncoderWindow(_dbContext, user).Show();
-                            break;
                         default:
                             ShowErrorNotification("Unauthorized role detected.");
                             return;

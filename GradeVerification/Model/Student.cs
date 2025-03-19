@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace GradeVerification.Model
 {
@@ -22,6 +18,10 @@ namespace GradeVerification.Model
         [Required]
         [MaxLength(50)]
         public string FirstName { get; set; }
+
+        // New MiddleName property (optional)
+        [MaxLength(50)]
+        public string MiddleName { get; set; }
 
         [Required]
         [MaxLength(50)]
@@ -50,7 +50,10 @@ namespace GradeVerification.Model
         public virtual AcademicProgram AcademicProgram { get; set; } // Navigation Property
         public virtual ICollection<Grade> Grades { get; set; } = new List<Grade>();
 
-        public string FullName => $"{LastName} {FirstName}";
+        // Updated FullName property to include MiddleName if present
+        public string FullName => string.IsNullOrWhiteSpace(MiddleName)
+            ? $"{LastName} {FirstName}"
+            : $"{LastName} {FirstName} {MiddleName}";
 
         private string GenerateStudentId()
         {
@@ -61,6 +64,5 @@ namespace GradeVerification.Model
         {
             Id = GenerateStudentId();
         }
-
     }
 }

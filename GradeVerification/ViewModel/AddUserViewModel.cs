@@ -60,7 +60,7 @@ namespace GradeVerification.ViewModel
             });
 
             _userService = new UserService(dbContext);
-            Roles = new ObservableCollection<string> { "Admin", "Staff", "Encoder" };
+            Roles = new ObservableCollection<string> { "Admin", "Staff" };
 
             // Set up the command with a CanExecute predicate that checks for validation errors.
             SaveUserCommand = new RelayCommand(async _ => await SaveUserAsync(), _ => !HasErrors());

@@ -6,8 +6,7 @@
              xmlns:local="clr-namespace:GradeVerification.View.Admin.User_Controls"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
-             MinHeight="640" MinWidth="1030">
-
+             MinHeight="600" MinWidth="1030">
     <Border CornerRadius="0 10 10 0" Background="#FAFAFA">
         <Grid>
             <Grid.RowDefinitions>
@@ -25,116 +24,143 @@
                         <ColumnDefinition Width="1.2*"/>
                         <ColumnDefinition Width="1.5*"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <TextBox Name="txtSearch" Height="40" Padding="10" Background="#F5F5F5"
-                         materialDesign:HintAssist.Hint="Search Student..."
-                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                         FontSize="14" BorderBrush="#E0E0E0" Grid.Column="0" Margin="0,0,10,0"
-                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+                             materialDesign:HintAssist.Hint="Search Student..."
+                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                             FontSize="14" BorderBrush="#E0E0E0" Grid.Column="0" Margin="0,0,10,0"
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
 
                     <ComboBox Name="cbSemester" Height="40" Grid.Column="1" Margin="0,0,10,0"
-                          materialDesign:HintAssist.Hint="Semester"
-                          ItemsSource="{Binding Semesters}" 
-                          SelectedItem="{Binding SelectedSemester, UpdateSourceTrigger=PropertyChanged}"/>
+                              materialDesign:HintAssist.Hint="Semester"
+                              ItemsSource="{Binding Semesters}" 
+                              SelectedItem="{Binding SelectedSemester, UpdateSourceTrigger=PropertyChanged}"/>
 
                     <ComboBox Name="cbYear" Height="40" Grid.Column="2" Margin="0,0,10,0"
-                          materialDesign:HintAssist.Hint="Year"
-                          ItemsSource="{Binding Years}" 
-                          SelectedItem="{Binding SelectedYear, UpdateSourceTrigger=PropertyChanged}"/>
+                              materialDesign:HintAssist.Hint="Year"
+                              ItemsSource="{Binding Years}" 
+                              SelectedItem="{Binding SelectedYear, UpdateSourceTrigger=PropertyChanged}"/>
 
                     <ComboBox Name="cbProgram" Height="40" Grid.Column="3" Margin="0,0,10,0"
-                          materialDesign:HintAssist.Hint="Program"
-                          ItemsSource="{Binding Programs}" 
-                          SelectedItem="{Binding SelectedProgram, UpdateSourceTrigger=PropertyChanged}"/>
+                              materialDesign:HintAssist.Hint="Program"
+                              ItemsSource="{Binding Programs}" 
+                              SelectedItem="{Binding SelectedProgram, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <Button Content="New Student" Height="40" Padding="20,0" Background="#28A745"
+                            Foreground="White" FontSize="14" FontWeight="SemiBold" 
+                            BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
+                            materialDesign:ButtonAssist.CornerRadius="8"
+                            Command="{Binding AddStudentCommand}" Grid.Column="4"/>
+                    <Button Content="Upload Student" Height="40" Padding="20,0" Background="#28A745"
+                            Foreground="White" FontSize="14" FontWeight="SemiBold" 
+                            BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
+                            materialDesign:ButtonAssist.CornerRadius="8" Margin="10,0,0,0"
+                            Command="{Binding UploadStudentCommand}" Grid.Column="5"/>
                 </Grid>
             </Border>
 
             <!-- Student Data Table -->
             <Border Grid.Row="1" Background="White" CornerRadius="10" Margin="20" Padding="0">
-                <DataGrid Name="dgSubjects" Style="{StaticResource DataGridStyle1}"
-                          RowStyle="{DynamicResource DataGridRowStyle1}"
-                          ColumnHeaderStyle="{DynamicResource DataGridColumnHeaderStyle1}"
-                          CellStyle="{DynamicResource DataGridCellStyle1}"
-                          ItemsSource="{Binding Students}">
+                <Grid>
+                    <DataGrid Name="dgStudents" ItemsSource="{Binding Students}" 
+                              Style="{StaticResource DataGridStyle1}"
+                              RowStyle="{DynamicResource DataGridRowStyle1}"
+                              ColumnHeaderStyle="{DynamicResource DataGridColumnHeaderStyle1}"
+                              CellStyle="{DynamicResource DataGridCellStyle1}"
+                              AutoGenerateColumns="False">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="ID" Width="100">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Id}" TextWrapping="Wrap"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="School ID" Width="100">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding SchoolId}" TextWrapping="Wrap"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Name" Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding FullName}" TextWrapping="Wrap"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Program" Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding AcademicProgram.ProgramCode}" TextWrapping="Wrap"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Year" Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Year}" TextWrapping="Wrap"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Semester" Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Semester}" TextWrapping="Wrap"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Status" Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Status}" TextWrapping="Wrap"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <!-- Actions Column -->
+                            <DataGridTemplateColumn Header="Actions" Width="180">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <Button Style="{StaticResource GradeEntryButton}" Cursor="Hand" 
+                                                    Command="{Binding DataContext.ShowGradeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                    CommandParameter="{Binding}">
+                                                <materialDesign:PackIcon Kind="Eye"/>
+                                            </Button>
+                                            <Button Style="{StaticResource gridEditButton}" Cursor="Hand"
+                                                    Command="{Binding DataContext.EditStudentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}">
+                                                <materialDesign:PackIcon Kind="Edit"/>
+                                            </Button>
+                                            <Button Style="{StaticResource gridRemoveButton}" Cursor="Hand"
+                                                    Command="{Binding DataContext.DeleteStudentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}">
+                                                <materialDesign:PackIcon Kind="Delete"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
 
-                    <DataGrid.Columns>
-
-                        <DataGridTemplateColumn Header="ID" Width="100">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Id}" TextWrapping="Wrap"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-
-                        <DataGridTemplateColumn Header="School ID" Width="100">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding SchoolId}" TextWrapping="Wrap"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-
-                        <DataGridTemplateColumn Header="Name" Width="*">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding FullName}" TextWrapping="Wrap"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-
-                        <DataGridTemplateColumn Header="Program" Width="*">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding AcademicProgram.ProgramCode}" TextWrapping="Wrap"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-
-                        <DataGridTemplateColumn Header="Year" Width="*">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Year}" TextWrapping="Wrap"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-
-                        <DataGridTemplateColumn Header="Semester" Width="*">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Semester}" TextWrapping="Wrap"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-
-                        <DataGridTemplateColumn Header="Status" Width="*">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Status}" TextWrapping="Wrap"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-
-                        <!-- Actions -->
-                        <DataGridTemplateColumn Header="Actions" Width="180">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-
-                                        <Button Style="{StaticResource GradeEntryButton}" Cursor="Hand" 
-                                                Command="{Binding DataContext.ShowGradeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                                CommandParameter="{Binding}">
-                                            <materialDesign:PackIcon Kind="Eye"/>
-                                        </Button>
-
-                                    </StackPanel>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-
-                    </DataGrid.Columns>
-                </DataGrid>
+                    <!-- No Students Found Message -->
+                    <TextBlock Text="No students found." FontSize="16" FontWeight="Bold" Foreground="Gray" 
+                               HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Students.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
             </Border>
         </Grid>
     </Border>
