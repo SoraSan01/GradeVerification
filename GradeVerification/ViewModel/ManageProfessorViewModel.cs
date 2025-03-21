@@ -4,16 +4,16 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using GradeVerification.Commands;       // Assuming your RelayCommand implementation is here
 using GradeVerification.Data;           // Your ApplicationDbContext location
-using GradeVerification.Model;          // Your Professor model location
+using GradeVerification.Model;
 
 namespace GradeVerification.ViewModel
 {
     public class ManageProfessorViewModel : INotifyPropertyChanged
     {
-        private readonly ApplicationDbContext _context;
         private string _newProfessorInput;
         private Professor _selectedProfessor;
 
@@ -46,28 +46,39 @@ namespace GradeVerification.ViewModel
         // Commands
         public ICommand AddProfessorCommand { get; }
         public ICommand DeleteProfessorCommand { get; }
-        public ICommand CloseCommand { get; } // You can bind this to a window close action if desired.
+        public ICommand CloseCommand { get; } // Bind this to a window close action if desired.
 
-        public ManageProfessorViewModel(ApplicationDbContext context)
+        public ManageProfessorViewModel()
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
             Professors = new ObservableCollection<Professor>();
+
+            LoadProfessors(); // Load professors on initialization
 
             // Initialize commands
             AddProfessorCommand = new RelayCommand(async (o) => await AddProfessorAsync(), (o) => CanAddProfessor());
             DeleteProfessorCommand = new RelayCommand(async (o) => await DeleteProfessorAsync(), (o) => CanDeleteProfessor());
 
-            LoadProfessors(); // Ensure professors are loaded on initialization
         }
 
         private void LoadProfessors()
         {
-            // Load the professors from the database into the ObservableCollection.
-            Professors.Clear();
-            var professors = _context.Professors.ToList();
-            foreach (var professor in professors)
+            try
             {
-                Professors.Add(professor);
+                using (var context = new ApplicationDbContext())
+                {
+                    // Clear the collection and load professors from the database.
+                    Professors.Clear();
+                    var professors = context.Professors.ToList();
+
+                    foreach (var professor in professors)
+                    {
+                        Professors.Add(professor);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading professors: " + ex.Message);
             }
         }
 
@@ -76,16 +87,20 @@ namespace GradeVerification.ViewModel
             if (string.IsNullOrWhiteSpace(NewProfessorInput))
                 return;
 
-            // Create a new professor record.
-            var professor = new Professor
+            // Create a new professor record using a fresh DbContext instance.
+            Professor professor;
+            using (var context = new ApplicationDbContext())
             {
-                Name = NewProfessorInput.Trim()
-            };
+                professor = new Professor
+                {
+                    Name = NewProfessorInput.Trim()
+                };
 
-            _context.Professors.Add(professor);
-            await _context.SaveChangesAsync();
+                context.Professors.Add(professor);
+                await context.SaveChangesAsync();
+            }
 
-            // Add to the ObservableCollection to refresh the UI.
+            // Update the UI-bound collection.
             Professors.Add(professor);
             NewProfessorInput = string.Empty;
         }
@@ -100,11 +115,16 @@ namespace GradeVerification.ViewModel
             if (SelectedProfessor == null)
                 return;
 
-            // Remove from the DbContext.
-            _context.Professors.Remove(SelectedProfessor);
-            await _context.SaveChangesAsync();
+            // Remove using a fresh DbContext instance.
+            using (var context = new ApplicationDbContext())
+            {
+                // Attach if not already tracked by this context.
+                context.Professors.Attach(SelectedProfessor);
+                context.Professors.Remove(SelectedProfessor);
+                await context.SaveChangesAsync();
+            }
 
-            // Remove from the ObservableCollection.
+            // Update the ObservableCollection.
             Professors.Remove(SelectedProfessor);
             SelectedProfessor = null;
         }

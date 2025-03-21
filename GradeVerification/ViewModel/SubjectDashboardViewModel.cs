@@ -24,15 +24,12 @@ namespace GradeVerification.ViewModel
         private string _selectedYear;
         private string _selectedSemester;
         private ObservableCollection<Subject> _subjects;
-        private readonly ApplicationDbContext _context;
         private readonly DispatcherTimer _filterTimer;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
         public SubjectDashboardViewModel()
         {
-            _context = new ApplicationDbContext();
-
             Subjects = new ObservableCollection<Subject>();
             YearOptions = new ObservableCollection<string>();
             SemesterOptions = new ObservableCollection<string>();
@@ -41,13 +38,13 @@ namespace GradeVerification.ViewModel
             _filterTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
             _filterTimer.Tick += FilterTimer_Tick;
 
-            // Initial load.
-            LoadSubjectsAsync();
-
             AddSubjectCommand = new RelayCommand(AddSubject);
             EditSubjectCommand = new RelayCommand(EditSubject, CanModifySubject);
             DeleteSubjectCommand = new RelayCommand(DeleteSubject, CanModifySubject);
             BulkInsertCommand = new RelayCommand(BulkInsert);
+
+            // Initial load.
+            LoadSubjectsAsync();
         }
 
         public ObservableCollection<Subject> Subjects
@@ -116,17 +113,13 @@ namespace GradeVerification.ViewModel
                     {
                         // Clear and update the Subjects collection.
                         Subjects.Clear();
-                        foreach (var subject in subjects)
-                        {
-                            Subjects.Add(subject);
-                        }
-
-                        // Clear and update the filter collections.
                         YearOptions.Clear();
                         SemesterOptions.Clear();
 
                         foreach (var subject in subjects)
                         {
+                            Subjects.Add(subject);
+
                             if (!string.IsNullOrWhiteSpace(subject.Year) && !YearOptions.Contains(subject.Year))
                             {
                                 YearOptions.Add(subject.Year);
@@ -141,7 +134,7 @@ namespace GradeVerification.ViewModel
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error loading subjects: {ex.Message}");
+                MessageBox.Show($"Error loading subjects: {ex.Message}");
             }
         }
 
@@ -158,7 +151,7 @@ namespace GradeVerification.ViewModel
             {
                 var addSubjectWindow = new AddSubject
                 {
-                    DataContext = new AddSubjectViewModel(_context, LoadSubjectsAsync)
+                    DataContext = new AddSubjectViewModel(LoadSubjectsAsync)
                 };
 
                 if (addSubjectWindow.ShowDialog() == true)
@@ -185,11 +178,21 @@ namespace GradeVerification.ViewModel
 
         private void DeleteSubject(object parameter)
         {
-            if (parameter is Subject subject)
+            try
             {
-                _context.Subjects.Remove(subject);
-                _context.SaveChanges();
-                LoadSubjectsAsync();
+                using (var context = new ApplicationDbContext())
+                {
+                    if (parameter is Subject subject)
+                    {
+                        context.Subjects.Remove(subject);
+                        context.SaveChanges();
+                        LoadSubjectsAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error deleting Subject: {ex.Message}");
             }
         }
 
@@ -220,31 +223,28 @@ namespace GradeVerification.ViewModel
         {
             try
             {
-                // Start with all subjects.
-                var query = _context.Subjects
-                    .Include(s => s.AcademicProgram)
-                    .AsQueryable();
-
-                // If search text is provided, do a case-insensitive search on SubjectName and SubjectCode.
-                if (!string.IsNullOrWhiteSpace(SearchText))
+                using (var context = new ApplicationDbContext())
                 {
-                    var lowerSearch = SearchText.Trim().ToLower();
-                    query = query.Where(s => s.SubjectName.ToLower().Contains(lowerSearch) ||
-                                             s.SubjectCode.ToLower().Contains(lowerSearch));
+                    // Start with all subjects.
+                    var query = context.Subjects
+                        .Include(s => s.AcademicProgram)
+                        .AsQueryable();
+                    // If search text is provided, do a case-insensitive search on SubjectName and SubjectCode.
+                    if (!string.IsNullOrWhiteSpace(SearchText))
+                    {
+                        var lowerSearch = SearchText.Trim().ToLower();
+                        query = query.Where(s => s.SubjectName.ToLower().Contains(lowerSearch) ||
+                                                 s.SubjectCode.ToLower().Contains(lowerSearch));
+                    }
+                    if (!string.IsNullOrWhiteSpace(SelectedYear))
+                    {
+                        query = query.Where(s => s.Year == SelectedYear);
+                    }
+                    if (!string.IsNullOrWhiteSpace(SelectedSemester))
+                    {
+                        query = query.Where(s => s.Semester == SelectedSemester);
+                    }
                 }
-
-                if (!string.IsNullOrWhiteSpace(SelectedYear))
-                {
-                    query = query.Where(s => s.Year == SelectedYear);
-                }
-
-                if (!string.IsNullOrWhiteSpace(SelectedSemester))
-                {
-                    query = query.Where(s => s.Semester == SelectedSemester);
-                }
-
-                var filteredSubjects = await query.ToListAsync();
-                Subjects = new ObservableCollection<Subject>(filteredSubjects);
             }
             catch (Exception ex)
             {

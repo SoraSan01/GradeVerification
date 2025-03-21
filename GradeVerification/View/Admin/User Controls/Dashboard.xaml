@@ -48,31 +48,31 @@
                 </Grid.ColumnDefinitions>
 
                 <uc:InfoCard Grid.Column="0" 
-                             Title="Students" 
-                             Number="{Binding StudentsCountDisplay}" 
-                             Icon="AccountStudent"
-                             Background1="#2ECC71" 
-                             Background2="#58D68D" 
-                             EllipseBackground1="#A9DFBF" 
-                             EllipseBackground2="#D4EFDF" />
+                 Title="Students" 
+                 Number="{Binding StudentsCountDisplay}" 
+                 Icon="AccountStudent"
+                 Background1="#2ECC71" 
+                 Background2="#58D68D" 
+                 EllipseBackground1="#A9DFBF" 
+                 EllipseBackground2="#D4EFDF" />
 
                 <uc:InfoCard Grid.Column="1" 
-                             Title="Courses" 
-                             Number="{Binding CoursesCountDisplay}" 
-                             Icon="AccountStudent"
-                             Background1="#28A745" 
-                             Background2="#52BE80" 
-                             EllipseBackground1="#A3E4D7" 
-                             EllipseBackground2="#D1F2EB" />
+                 Title="Courses" 
+                 Number="{Binding CoursesCountDisplay}" 
+                 Icon="Book"
+                 Background1="#28A745" 
+                 Background2="#52BE80" 
+                 EllipseBackground1="#A3E4D7" 
+                 EllipseBackground2="#D1F2EB" />
 
-                <uc:InfoCard Grid.Column="2" 
-                             Title="Program" 
-                             Number="{Binding ProgramsCountDisplay}" 
-                             Icon="AccountStudent"
-                             Background1="#239B56" 
-                             Background2="#45B39D" 
-                             EllipseBackground1="#A2D9CE" 
-                             EllipseBackground2="#D0ECE7" />
+                    <uc:InfoCard Grid.Column="2" 
+                 Title="Programs" 
+                 Number="{Binding ProgramsCountDisplay}" 
+                 Icon="School"
+                 Background1="#239B56" 
+                 Background2="#45B39D" 
+                 EllipseBackground1="#A2D9CE" 
+                 EllipseBackground2="#D0ECE7" />
             </Grid>
 
             <Grid Grid.Row="2">

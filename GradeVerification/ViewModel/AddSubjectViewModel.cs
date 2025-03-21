@@ -40,7 +40,7 @@ namespace GradeVerification.ViewModel
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public AddSubjectViewModel(ApplicationDbContext dbContext, Action onUpdate)
+        public AddSubjectViewModel(Action onUpdate)
         {
             _activityLogService = new ActivityLogService();
 
@@ -59,21 +59,22 @@ namespace GradeVerification.ViewModel
             });
 
             // Initialize collections for ComboBoxes
-            YearList = new ObservableCollection<string> { "First Year", "Second Year", "Third Year", "Fourth Year" };
+            YearList = new ObservableCollection<YearLevel>();
             SemesterList = new ObservableCollection<string> { "First Semester", "Second Semester" };
 
             ProgramList = new ObservableCollection<AcademicProgram>();
             Professors = new ObservableCollection<Professor>();  // For the professor ComboBox
 
             _programService = new AcademicProgramService();
-            _context = dbContext;
-
-            LoadPrograms();
-            LoadProfessors();
 
             SaveSubjectCommand = new RelayCommand(async (param) => await SaveSubject(), (param) => CanSaveSubject());
             CancelCommand = new RelayCommand(Cancel);
             ManageProfessorCommand = new RelayCommand(ManageProfessors);
+
+            LoadProfessors();
+            LoadPrograms();
+            LoadYears();
+
             _onUpdate = onUpdate;
         }
 
@@ -84,8 +85,8 @@ namespace GradeVerification.ViewModel
         {
             // Opens a window where the user can add/delete professors
             var professorWindow = new ManageProfessors();
-            professorWindow.DataContext = new ManageProfessorViewModel(_context);
-            professorWindow.ShowDialog();
+            professorWindow.DataContext = new ManageProfessorViewModel();
+            professorWindow.Show();
 
             LoadProfessors();
         }
@@ -104,11 +105,14 @@ namespace GradeVerification.ViewModel
         {
             try
             {
-                var professors = await _context.Professors.OrderBy(p => p.Name).ToListAsync();
-                Professors.Clear();
-                foreach (var professor in professors)
+                using (var context = new ApplicationDbContext())
                 {
-                    Professors.Add(professor);
+                    Professors.Clear();
+                    var professors = await context.Professors.ToListAsync();
+                    foreach (var professor in professors)
+                    {
+                        Professors.Add(professor);
+                    }
                 }
             }
             catch (Exception ex)
@@ -116,6 +120,26 @@ namespace GradeVerification.ViewModel
                 MessageBox.Show($"Error loading professors: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        private async void LoadYears()
+        {
+            try
+            {
+                using (var context = new ApplicationDbContext())
+                {
+                    YearList.Clear();
+                    var years = await context.YearLevels.ToListAsync();
+                    foreach (var year in years)
+                    {
+                        YearList.Add(year);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading years: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }   
 
         public string SubjectCode
         {
@@ -166,7 +190,7 @@ namespace GradeVerification.ViewModel
             set { _schedule = value; OnPropertyChanged(); }
         }
 
-        public ObservableCollection<string> YearList { get; }
+        public ObservableCollection<YearLevel> YearList { get; }
         public ObservableCollection<AcademicProgram> ProgramList { get; }
         public ObservableCollection<string> SemesterList { get; }
         public ObservableCollection<Professor> Professors { get; }  // For professor ComboBox

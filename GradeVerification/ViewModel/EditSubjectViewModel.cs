@@ -85,7 +85,7 @@ namespace GradeVerification.ViewModel
             using (var context = new ApplicationDbContext())
             {
                 var window = new ManageProfessors();
-                window.DataContext = new ManageProfessorViewModel(context);
+                window.DataContext = new ManageProfessorViewModel();
                 window.Show();
                 // Reload professors after the management window closes.
                 LoadProfessors();

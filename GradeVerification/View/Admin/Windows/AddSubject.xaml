@@ -108,6 +108,7 @@
                             <!-- Year ComboBox -->
                             <ComboBox Grid.Row="3" Grid.Column="1" Margin="10"
                                       materialDesign:HintAssist.Hint="Year"
+                                      DisplayMemberPath="LevelName" 
                                       ItemsSource="{Binding YearList}" 
                                       SelectedItem="{Binding SelectedYear, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
 

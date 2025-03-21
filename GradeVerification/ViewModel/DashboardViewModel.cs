@@ -7,8 +7,8 @@ using LiveCharts;
 using LiveCharts.Wpf;
 using GradeVerification.Repository;
 using GradeVerification.Model;
-using System.Timers;
-using GradeVerification.Commands; // Using System.Timers.Timer
+using System.Windows.Threading;
+using GradeVerification.Commands;
 
 namespace GradeVerification.ViewModel
 {
@@ -40,20 +40,20 @@ namespace GradeVerification.ViewModel
             set { _programsCount = value; OnPropertyChanged(); OnPropertyChanged(nameof(ProgramsCountDisplay)); }
         }
 
-        // Formatted display properties.
-        public string StudentsCountDisplay => StudentsCount.ToString();
-        public string CoursesCountDisplay => CoursesCount.ToString();
-        public string ProgramsCountDisplay => ProgramsCount.ToString();
+        // Formatted display properties with number separators.
+        public string StudentsCountDisplay => StudentsCount.ToString("N0");
+        public string CoursesCountDisplay => CoursesCount.ToString("N0");
+        public string ProgramsCountDisplay => ProgramsCount.ToString("N0");
 
         public SeriesCollection SeriesCollection { get; set; }
         public string[] Labels { get; set; }
         public Func<double, string> Formatter { get; set; }
 
-        // Use non-generic RelayCommand.
+        // Refresh command.
         public RelayCommand RefreshDashboardCommand { get; }
 
-        // Using the System.Timers.Timer (fully qualified) to avoid ambiguity.
-        private System.Timers.Timer _refreshTimer;
+        // DispatcherTimer for periodic data refresh.
+        private DispatcherTimer _refreshTimer;
 
         public DashboardViewModel(IRepository<Student> studentRepo, IRepository<Subject> subjectRepo, IRepository<AcademicProgram> programRepo)
         {
@@ -98,34 +98,56 @@ namespace GradeVerification.ViewModel
 
             // Initialize the refresh command.
             RefreshDashboardCommand = new RelayCommand(async _ => await RefreshDashboard());
-            _ = LoadDataAsync();
+
+            // Load initial data.
+            _ = RefreshDashboard();
+
+            // Set up a timer to automatically refresh data every 30 seconds.
+            SetupRefreshTimer();
         }
 
-        private async Task LoadDataAsync()
+        private void SetupRefreshTimer()
+        {
+            _refreshTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(30)
+            };
+            _refreshTimer.Tick += async (sender, args) =>
+            {
+                try
+                {
+                    await RefreshDashboard();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Auto-refresh error: {ex.Message}");
+                }
+            };
+            _refreshTimer.Start();
+        }
+
+        public async Task RefreshDashboard()
         {
             try
             {
-                // Fetch counts concurrently.
+                // Fetch counts concurrently
                 var studentCountTask = _studentRepository.GetCountAsync();
                 var courseCountTask = _subjectRepository.GetCountAsync();
                 var programCountTask = _programRepository.GetCountAsync();
 
                 await Task.WhenAll(studentCountTask, courseCountTask, programCountTask);
 
+                // Update properties using the completed tasks' results
                 StudentsCount = studentCountTask.Result;
                 CoursesCount = courseCountTask.Result;
                 ProgramsCount = programCountTask.Result;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("Error loading dashboard data: " + ex.Message);
+                // Log detailed error
+                System.Diagnostics.Debug.WriteLine($"Refresh error: {ex}");
+                // Consider showing an error message to the user
             }
-        }
-
-        public async Task RefreshDashboard()
-        {
-            await LoadDataAsync();
-            // Optionally, update other dashboard items (like charts) here.
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
