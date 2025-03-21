@@ -23,29 +23,12 @@ namespace GradeVerification.ViewModel
         private string _searchText;
         private string _selectedYear;
         private string _selectedSemester;
-        private ObservableCollection<Subject> _subjects;
         private readonly DispatcherTimer _filterTimer;
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        private ObservableCollection<Subject> _subjects = new ObservableCollection<Subject>();
 
-        public SubjectDashboardViewModel()
-        {
-            Subjects = new ObservableCollection<Subject>();
-            YearOptions = new ObservableCollection<string>();
-            SemesterOptions = new ObservableCollection<string>();
-
-            // Initialize a debounce timer with a 300ms interval.
-            _filterTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
-            _filterTimer.Tick += FilterTimer_Tick;
-
-            AddSubjectCommand = new RelayCommand(AddSubject);
-            EditSubjectCommand = new RelayCommand(EditSubject, CanModifySubject);
-            DeleteSubjectCommand = new RelayCommand(DeleteSubject, CanModifySubject);
-            BulkInsertCommand = new RelayCommand(BulkInsert);
-
-            // Initial load.
-            LoadSubjectsAsync();
-        }
+        public ObservableCollection<string> YearOptions { get; } = new ObservableCollection<string>();
+        public ObservableCollection<string> SemesterOptions { get; } = new ObservableCollection<string>();
 
         public ObservableCollection<Subject> Subjects
         {
@@ -56,9 +39,6 @@ namespace GradeVerification.ViewModel
                 OnPropertyChanged();
             }
         }
-
-        public ObservableCollection<string> YearOptions { get; }
-        public ObservableCollection<string> SemesterOptions { get; }
 
         public string SearchText
         {
@@ -93,10 +73,29 @@ namespace GradeVerification.ViewModel
             }
         }
 
+        public event PropertyChangedEventHandler PropertyChanged;
+
         public ICommand AddSubjectCommand { get; }
         public ICommand EditSubjectCommand { get; }
         public ICommand DeleteSubjectCommand { get; }
         public ICommand BulkInsertCommand { get; }
+
+        private const int PageSize = 100; // Adjust page size as needed
+
+        public SubjectDashboardViewModel()
+        {
+            // Initialize debounce timer
+            _filterTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+            _filterTimer.Tick += FilterTimer_Tick;
+
+            AddSubjectCommand = new RelayCommand(AddSubject);
+            EditSubjectCommand = new RelayCommand(EditSubject, CanModifySubject);
+            DeleteSubjectCommand = new RelayCommand(DeleteSubject, CanModifySubject);
+            BulkInsertCommand = new RelayCommand(BulkInsert);
+
+            // Initial load.
+            LoadSubjectsAsync();
+        }
 
         private async void LoadSubjectsAsync()
         {
@@ -104,14 +103,15 @@ namespace GradeVerification.ViewModel
             {
                 using (var context = new ApplicationDbContext())
                 {
+                    // Load only a limited number of subjects for initial display.
                     var subjects = await context.Subjects
                                                 .Include(s => s.AcademicProgram)
+                                                .Take(PageSize)
                                                 .ToListAsync();
 
-                    // Update the UI-bound collections asynchronously.
-                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    // Update UI-bound collections on the UI thread.
+                    Application.Current.Dispatcher.Invoke(() =>
                     {
-                        // Clear and update the Subjects collection.
                         Subjects.Clear();
                         YearOptions.Clear();
                         SemesterOptions.Clear();
@@ -229,21 +229,39 @@ namespace GradeVerification.ViewModel
                     var query = context.Subjects
                         .Include(s => s.AcademicProgram)
                         .AsQueryable();
-                    // If search text is provided, do a case-insensitive search on SubjectName and SubjectCode.
+
+                    // Filter by search text if provided.
                     if (!string.IsNullOrWhiteSpace(SearchText))
                     {
                         var lowerSearch = SearchText.Trim().ToLower();
                         query = query.Where(s => s.SubjectName.ToLower().Contains(lowerSearch) ||
                                                  s.SubjectCode.ToLower().Contains(lowerSearch));
                     }
+                    // Filter by selected year.
                     if (!string.IsNullOrWhiteSpace(SelectedYear))
                     {
                         query = query.Where(s => s.Year == SelectedYear);
                     }
+                    // Filter by selected semester.
                     if (!string.IsNullOrWhiteSpace(SelectedSemester))
                     {
                         query = query.Where(s => s.Semester == SelectedSemester);
                     }
+
+                    // Apply paging to limit the number of records loaded.
+                    var filteredSubjects = await query
+                                                .Take(PageSize)
+                                                .ToListAsync();
+
+                    // Update the Subjects collection on the UI thread.
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        Subjects.Clear();
+                        foreach (var subject in filteredSubjects)
+                        {
+                            Subjects.Add(subject);
+                        }
+                    });
                 }
             }
             catch (Exception ex)

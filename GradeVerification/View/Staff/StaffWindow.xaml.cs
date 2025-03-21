@@ -81,6 +81,14 @@ namespace GradeVerification.View.Staff
             MainContentControl.Content = new Dashboard();
         }
 
+        private void btn_grades(object sender, RoutedEventArgs e)
+        {
+            SetActiveButton((Button)sender);
+            var staffGrade = new StaffGradeDashboard();
+            staffGrade.DataContext = new GradeDashboardViewModel();
+            MainContentControl.Content = staffGrade;
+        }
+
         private void btn_logout(object sender, RoutedEventArgs e)
         {
             MessageBoxResult result = MessageBox.Show("Are you sure you want to log out?", "Logout", MessageBoxButton.YesNo, MessageBoxImage.Question);

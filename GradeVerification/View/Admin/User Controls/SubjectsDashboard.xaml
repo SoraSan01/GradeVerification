@@ -62,7 +62,8 @@
                           RowStyle="{DynamicResource DataGridRowStyle1}"
                           ColumnHeaderStyle="{DynamicResource DataGridColumnHeaderStyle1}"
                           CellStyle="{DynamicResource DataGridCellStyle1}"
-                          ItemsSource="{Binding Subjects}">
+                          ItemsSource="{Binding Subjects}"
+                          VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling">
 
                     <DataGrid.Columns>
                         

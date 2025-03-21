@@ -22,21 +22,22 @@ namespace GradeVerification.ViewModel
 {
     public class GradeDashboardViewModel : INotifyPropertyChanged, INotifyDataErrorInfo
     {
-        // Private backing fields
+        // Backing fields
         private string _searchText;
-        private ObservableCollection<Grade> _grades;
-        private ObservableCollection<string> _semesters;
         private string _selectedSemester;
-        private ObservableCollection<string> _years;
         private string _selectedYear;
-        private ObservableCollection<string> _programs;
         private string _selectedProgram;
         private bool _isLoading;
+
+        private ObservableCollection<Grade> _grades = new ObservableCollection<Grade>();
+        private ObservableCollection<string> _semesters = new ObservableCollection<string>();
+        private ObservableCollection<string> _programs = new ObservableCollection<string>();
+        private ObservableCollection<string> _years = new ObservableCollection<string>();
 
         // Notifier for user feedback
         private readonly Notifier _notifier;
 
-        // Validation dictionary for INotifyDataErrorInfo
+        // Validation errors
         private readonly Dictionary<string, List<string>> _propertyErrors = new Dictionary<string, List<string>>();
 
         #region Properties
@@ -51,7 +52,6 @@ namespace GradeVerification.ViewModel
                     _searchText = value;
                     OnPropertyChanged();
                     ValidateSearchText();
-                    // Trigger filtering asynchronously
                     _ = FilterGradesAsync();
                 }
             }
@@ -145,7 +145,7 @@ namespace GradeVerification.ViewModel
 
         public GradeDashboardViewModel()
         {
-            // Initialize notifier with ToastNotifications configuration
+            // Initialize notifier with ToastNotifications configuration.
             _notifier = new Notifier(cfg =>
             {
                 cfg.PositionProvider = new PrimaryScreenPositionProvider(corner: Corner.BottomRight, offsetX: 10, offsetY: 10);
@@ -154,46 +154,48 @@ namespace GradeVerification.ViewModel
                 cfg.Dispatcher = Application.Current.Dispatcher;
             });
 
-            // Load filter options from the database with error handling
-            try
-            {
-                using (var context = new ApplicationDbContext())
-                {
-                    Semesters = new ObservableCollection<string>(context.Students
-                        .Select(s => s.Semester)
-                        .Distinct()
-                        .ToList());
-
-                    Years = new ObservableCollection<string>(context.Students
-                        .Select(s => s.Year)
-                        .Distinct()
-                        .ToList());
-
-                    Programs = new ObservableCollection<string>(context.Students
-                        .Select(s => s.AcademicProgram.ProgramCode)
-                        .Distinct()
-                        .ToList());
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error loading filter options: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-
-            // Initialize commands with parameter validation
+            // Initialize commands with parameter validation.
             DeleteGradeCommand = new RelayCommand(DeleteGrade, param => param is Grade);
             UploadFileCommand = new RelayCommand(UploadGrades);
             InputGradeCommand = new RelayCommand(InputGrade, param => param is Grade);
             AddSubjectCommand = new RelayCommand(AddSubject);
             EnterGradeCommand = new RelayCommand(EnterGrade);
 
-            // Load initial grades asynchronously
+            // Load initial data.
+            _ = LoadFilterOptionsAsync();
             _ = LoadGradesAsync();
         }
 
         #endregion
 
         #region Data Loading & Filtering
+
+        private async Task LoadFilterOptionsAsync()
+        {
+            try
+            {
+                using (var context = new ApplicationDbContext())
+                {
+                    // Load distinct filter options from the Students table.
+                    var semesters = await context.Students.Select(s => s.Semester).Distinct().ToListAsync();
+                    var years = await context.Students.Select(s => s.Year).Distinct().ToListAsync();
+                    var programs = await context.Students.Select(s => s.AcademicProgram.ProgramCode).Distinct().ToListAsync();
+
+                    // If you're not on the UI thread, ensure the update happens on the UI thread:
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        Semesters = new ObservableCollection<string>(semesters);
+                        Years = new ObservableCollection<string>(years);
+                        Programs = new ObservableCollection<string>(programs);
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                // For production, consider logging this instead of using MessageBox.
+                MessageBox.Show($"Error loading filter options: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
 
         private async Task LoadGradesAsync()
         {
@@ -207,7 +209,7 @@ namespace GradeVerification.ViewModel
                         .Include(g => g.Subject)
                         .ToListAsync();
 
-                    // Update Grades on the UI thread
+                    // Update Grades on the UI thread.
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         Grades = new ObservableCollection<Grade>(grades);
@@ -253,6 +255,7 @@ namespace GradeVerification.ViewModel
                         query = query.Where(g => g.Student.AcademicProgram.ProgramCode.ToLower() == SelectedProgram.ToLower());
 
                     var filteredGrades = await query.ToListAsync();
+
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         Grades = new ObservableCollection<Grade>(filteredGrades);
@@ -268,29 +271,6 @@ namespace GradeVerification.ViewModel
         #endregion
 
         #region Command Handlers
-
-        private void InputGrade(object parameter)
-        {
-            if (parameter is Grade selectedGrade)
-            {
-                try
-                {
-                    var inputGradeWindow = new InputGrade();
-                    inputGradeWindow.DataContext = new InputGradeViewModel(selectedGrade);
-                    inputGradeWindow.ShowDialog();
-                    // Refresh data after editing
-                    _ = LoadGradesAsync();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Error loading grade for editing: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-            else
-            {
-                MessageBox.Show("Please select a grade to edit.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
 
         private async void DeleteGrade(object parameter)
         {
@@ -315,6 +295,29 @@ namespace GradeVerification.ViewModel
                         MessageBox.Show($"Error deleting grade: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
+            }
+        }
+
+        private void InputGrade(object parameter)
+        {
+            if (parameter is Grade selectedGrade)
+            {
+                try
+                {
+                    var inputGradeWindow = new InputGrade();
+                    inputGradeWindow.DataContext = new InputGradeViewModel(selectedGrade);
+                    inputGradeWindow.ShowDialog();
+                    // Refresh grades after editing.
+                    _ = LoadGradesAsync();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error loading grade for editing: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            else
+            {
+                MessageBox.Show("Please select a grade to edit.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 
@@ -388,7 +391,6 @@ namespace GradeVerification.ViewModel
             ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
         }
 
-        // Sample validation: ensure the search text is not too long
         private void ValidateSearchText()
         {
             ClearErrors(nameof(SearchText));
