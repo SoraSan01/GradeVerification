@@ -15,7 +15,12 @@ namespace GradeVerification.Converters
                 {
                     return numericGrade >= 75 ? Brushes.Green : Brushes.Red;
                 }
-                else if (grade.Equals("INC", StringComparison.OrdinalIgnoreCase))
+                else if (grade.Equals("INC", StringComparison.OrdinalIgnoreCase) ||
+                    (grade.Equals("N/A", StringComparison.OrdinalIgnoreCase)) ||
+                    (grade.Equals("NGS", StringComparison.OrdinalIgnoreCase)) ||
+                    (grade.Equals("NN", StringComparison.OrdinalIgnoreCase)) ||
+                    (grade.Equals("-", StringComparison.OrdinalIgnoreCase)) ||
+                    (grade.Equals("DROP", StringComparison.OrdinalIgnoreCase)))
                 {
                     return Brushes.Gray;
                 }

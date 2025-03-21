@@ -159,7 +159,7 @@ namespace GradeVerification.ViewModel
             {
                 using (var context = new ApplicationDbContext())
                 {
-                    Semesters = new ObservableCollection<string>(context.Subjects
+                    Semesters = new ObservableCollection<string>(context.Students
                         .Select(s => s.Semester)
                         .Distinct()
                         .ToList());

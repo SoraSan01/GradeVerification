@@ -205,20 +205,22 @@ namespace GradeVerification.ViewModel
         {
             try
             {
-                var years = await _context.SchoolYears
-                    .OrderByDescending(y => y.SchoolYears)
-                    .ToListAsync();
-
-                // Update the collection on the UI thread
-                Application.Current.Dispatcher.Invoke(() =>
+                using (var context = new ApplicationDbContext())
                 {
-                    SchoolYears.Clear();
-                    foreach (var year in years)
+                    var years = await context.SchoolYears
+                        .OrderByDescending(y => y.SchoolYears)
+                        .ToListAsync();
+
+                    Application.Current.Dispatcher.Invoke(() =>
                     {
-                        // Assuming SchoolYear model has a property named SchoolYears that is a string
-                        SchoolYears.Add(year.SchoolYears);
-                    }
-                });
+                        SchoolYears.Clear();
+                        foreach (var year in years)
+                        {
+                            // Assuming the model has a property named SchoolYears that is a string.
+                            SchoolYears.Add(year.SchoolYears);
+                        }
+                    });
+                }
             }
             catch (Exception ex)
             {
@@ -265,18 +267,21 @@ namespace GradeVerification.ViewModel
         {
             try
             {
-                var levels = await _context.YearLevels
-                    .OrderBy(y => y.LevelName)
-                    .ToListAsync();
-
-                Application.Current.Dispatcher.Invoke(() =>
+                using (var context = new ApplicationDbContext())
                 {
-                    Years.Clear();
-                    foreach (var level in levels)
+                    var levels = await context.YearLevels
+                        .OrderBy(y => y.LevelName)
+                        .ToListAsync();
+
+                    Application.Current.Dispatcher.Invoke(() =>
                     {
-                        Years.Add(level.LevelName);
-                    }
-                });
+                        Years.Clear();
+                        foreach (var level in levels)
+                        {
+                            Years.Add(level.LevelName);
+                        }
+                    });
+                }
             }
             catch (Exception ex)
             {
@@ -348,7 +353,9 @@ namespace GradeVerification.ViewModel
                 _context.Students.Add(newStudent);
                 await _context.SaveChangesAsync();
 
-                // Enrollment logic omitted for brevity
+                // Subject Enrollment Logic:
+                // Enroll the student in all subjects that match their program, year, and semester.
+                await EnrollStudentSubjects(newStudent);
 
                 ClearForm();
                 LoadPrograms();
@@ -362,6 +369,50 @@ namespace GradeVerification.ViewModel
             {
                 MessageBox.Show($"Error: {ex.InnerException?.Message ?? ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 ShowErrorNotification("Error saving student.");
+            }
+        }
+
+        /// <summary>
+        /// Enrolls the newly added student in subjects based on their program, year, and semester.
+        /// Assumes that:
+        /// 1. There is a Subjects DbSet in _context.
+        /// 2. Each Subject has properties like ProgramId, Year, and Semester.
+        /// 3. There is an Enrollment entity with at least StudentId, SubjectId, and EnrolledOn properties.
+        /// </summary>
+        private async Task EnrollStudentSubjects(Student student)
+        {
+            // Skip enrollment if the student is a non-scholar.
+            if (student.Status.Equals("Non-Scholar", StringComparison.OrdinalIgnoreCase))
+            {
+                _notifier.ShowInformation("Student is a non-scholar. Enrollment skipped.");
+                return;
+            }
+
+            // Retrieve the list of subjects that match the student's details.
+            var subjectsToEnroll = await _context.Subjects
+                .Where(s => s.ProgramId == student.ProgramId &&
+                            s.Year == student.Year &&
+                            s.Semester == student.Semester)
+                .ToListAsync();
+
+            if (subjectsToEnroll.Any())
+            {
+                foreach (var subject in subjectsToEnroll)
+                {
+                    var enrollment = new Grade
+                    {
+                        StudentId = student.Id, // Ensure Student.Id is populated after SaveChangesAsync
+                        SubjectId = subject.SubjectId,
+                    };
+                    _context.Grade.Add(enrollment);
+                }
+
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                // Optionally notify if no subjects were found for enrollment.
+                _notifier.ShowInformation("No subjects available for enrollment based on the selected criteria.");
             }
         }
 

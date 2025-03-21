@@ -5,12 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
-        Title="Student Grades" Height="800" Width="700"
+        Title="Student Grades" Height="750" Width="700"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent">
 
     <Grid x:Name="MainGrid">
-        <Border CornerRadius="10" Background="White" Padding="15" Margin="0">
+        <Border x:Name="MainBorder" CornerRadius="10" Background="White" Padding="15" Margin="10">
             <Border.Effect>
                 <DropShadowEffect Color="Black" BlurRadius="10" ShadowDepth="2" Opacity="0.3"/>
             </Border.Effect>
@@ -23,8 +23,8 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- School Information -->
-                <Border Background="#2E7D32" Padding="10" Grid.Row="0">
+                <!-- University Header -->
+                <Border Background="#2E7D32" Padding="10" Grid.Row="0" CornerRadius="5">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -33,95 +33,103 @@
                         </Grid.ColumnDefinitions>
                         <Image Source="/Resources/umlogo.png" Width="70" Height="70" Grid.Column="0" Margin="5"/>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Text="The University of Manila" FontSize="20" FontWeight="Bold" Foreground="White"/>
-                            <TextBlock Text="546 Mariano V. delos Santos Street, Sampaloc Manila, Philippines 1008" FontSize="12" Foreground="White"/>
+                            <TextBlock Text="The University of Manila" FontSize="20" FontWeight="Bold" Foreground="White" TextAlignment="left"/>
+                            <TextBlock Text="546 Mariano V. delos Santos Street, Sampaloc Manila, 
+                                       Philippines 1008" FontSize="12" Foreground="White" TextAlignment="left"
+                                       TextWrapping="Wrap"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center">
-                            <TextBlock Text="Contact: 8735-5085" FontSize="12" Foreground="White"/>
-                            <TextBlock Text="Website: http://www.um.edu.ph" FontSize="12" Foreground="White"/>
-                            <TextBlock Text="Email: umnla.edu.ph@gmail.com" FontSize="12" Foreground="White"/>
+                            <TextBlock Text="Contact: 8735-5085" FontSize="12" Foreground="White" TextAlignment="Right"/>
+                            <TextBlock Text="Website: http://www.um.edu.ph" FontSize="12" Foreground="White" TextAlignment="Right"/>
+                            <TextBlock Text="Email: umnla.edu.ph@gmail.com" FontSize="12" Foreground="White" TextAlignment="Right"/>
                         </StackPanel>
                     </Grid>
                 </Border>
 
-                <!-- Header -->
-                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10">
-                    <TextBlock Text="Student Grades" FontSize="22" FontWeight="Bold" Foreground="#2E7D32"/>
+                <!-- Main Header -->
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
+                    <TextBlock Text="Student Grades" FontSize="26" FontWeight="Bold" Foreground="#2E7D32" />
                 </StackPanel>
 
-                <!-- Student Information Section -->
-                <Border Grid.Row="2" Background="#F1F8E9" CornerRadius="5" Padding="10" Margin="10">
+                <!-- Student Information -->
+                <Border Grid.Row="2" Background="#F1F8E9" CornerRadius="5" Padding="10" Margin="0 0 0 0">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1*"/>
                             <ColumnDefinition Width="1*"/>
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                 <TextBlock Text="Full Name:" FontWeight="Bold" Foreground="#388E3C" Margin="0,0,10,0"/>
-                                <TextBlock Text="{Binding Student.FullName}"/>
+                                <TextBlock Text="{Binding Student.FullName}" />
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                 <TextBlock Text="School ID:" FontWeight="Bold" Foreground="#388E3C" Margin="0,0,10,0"/>
-                                <TextBlock Text="{Binding Student.SchoolId}"/>
+                                <TextBlock Text="{Binding Student.SchoolId}" />
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                 <TextBlock Text="Program:" FontWeight="Bold" Foreground="#388E3C" Margin="0,0,10,0"/>
-                                <TextBlock Text="{Binding Student.AcademicProgram.ProgramCode}"/>
+                                <TextBlock Text="{Binding Student.AcademicProgram.ProgramCode}" />
                             </StackPanel>
                         </StackPanel>
                         <StackPanel Grid.Column="1">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                 <TextBlock Text="Year:" FontWeight="Bold" Foreground="#388E3C" Margin="0,0,10,0"/>
-                                <TextBlock Text="{Binding Student.Year}"/>
+                                <TextBlock Text="{Binding Student.Year}" />
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                 <TextBlock Text="Semester:" FontWeight="Bold" Foreground="#388E3C" Margin="0,0,10,0"/>
-                                <TextBlock Text="{Binding Student.Semester}"/>
+                                <TextBlock Text="{Binding Student.Semester}" />
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                 <TextBlock Text="Date:" FontWeight="Bold" Foreground="#388E3C" Margin="0,0,10,0"/>
-                                <TextBlock Text="{Binding CurrentDate}" Margin="0,0,10,0"/>
+                                <TextBlock Text="{Binding CurrentDate}" />
                             </StackPanel>
                         </StackPanel>
                     </Grid>
                 </Border>
 
                 <!-- Grades DataGrid -->
-                <Border Grid.Row="3" Background="White" CornerRadius="5" Padding="10" Margin="10">
-                    <DataGrid ItemsSource="{Binding Grades}" Margin="0"
-                              Style="{StaticResource DataGridStyle1}"
-                              RowStyle="{DynamicResource DataGridRowStyle1}"
-                              ColumnHeaderStyle="{DynamicResource DataGridColumnHeaderStyle1}"
-                              CellStyle="{DynamicResource DataGridCellStyle1}"
-                              AutoGenerateColumns="False" IsReadOnly="True" Height="400">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Subject" FontSize="15" Binding="{Binding Subject.SubjectCode}" Width="*"/>
-                            <DataGridTextColumn Header="Schedule" FontSize="15" Binding="{Binding Subject.Schedule}" Width="*"/>
-                            <DataGridTextColumn Header="Professor" FontSize="15" Binding="{Binding Subject.Professor}" Width="*"/>
-                            <DataGridTemplateColumn Header="Grade" Width="*">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock FontSize="15" Text="{Binding Score}" 
-                                                   Style="{StaticResource GradeTextBlockStyle}" 
-                                                   Padding="0"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
+                <Border Grid.Row="3" Background="White" CornerRadius="5" Padding="10" Margin="0">
+                    <!-- Remove fixed height so the grid auto-sizes for printing -->
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <DataGrid ItemsSource="{Binding Grades}" 
+                      Style="{StaticResource DataGridStyle1}"
+                      RowStyle="{DynamicResource DataGridRowStyle1}"
+                      ColumnHeaderStyle="{DynamicResource DataGridColumnHeaderStyle1}"
+                      CellStyle="{DynamicResource DataGridCellStyle1}"
+                      AutoGenerateColumns="False" IsReadOnly="True"
+                      CanUserResizeRows="False" 
+                      HeadersVisibility="Column"
+                      VerticalScrollBarVisibility="Hidden">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Subject" FontSize="15" Binding="{Binding Subject.SubjectCode}" Width="*" />
+                                <DataGridTextColumn Header="Schedule" FontSize="15" Binding="{Binding Subject.Schedule}" Width="*" />
+                                <DataGridTextColumn Header="Professor" FontSize="15" Binding="{Binding Subject.Professor}" Width="*" />
+                                <DataGridTemplateColumn Header="Grade" Width="*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock FontSize="15" Text="{Binding Score}" 
+                                 Style="{StaticResource GradeTextBlockStyle}" 
+                                 Padding="2" TextAlignment="Center" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </ScrollViewer>
                 </Border>
 
                 <!-- Footer Buttons -->
-                <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="10">
-                    <Button Content="Print" Width="100" Height="40"
-                            Command="{Binding PrintCommand}" 
-                            CommandParameter="{Binding ElementName=MainGrid}"
-                            Style="{StaticResource MaterialDesignRaisedButton}"
-                            Margin="0,0,10,0"/>
-                    <Button Content="Close" Width="100" Height="40"
-                            Command="{Binding CloseCommand}" 
-                            Style="{StaticResource MaterialDesignRaisedButton}"/>
+                <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0">
+                    <Button x:Name="PrintButton" Content="Print" Width="100" Height="40"
+                  Command="{Binding PrintCommand}" 
+                  CommandParameter="{Binding ElementName=MainGrid}"
+                  Style="{StaticResource MaterialDesignRaisedButton}"
+                  Margin="0,0,10,0"/>
+                    <Button x:Name="CloseButton" Content="Close" Width="100" Height="40"
+                  Command="{Binding CloseCommand}" 
+                  Style="{StaticResource MaterialDesignRaisedButton}"/>
                 </StackPanel>
             </Grid>
         </Border>

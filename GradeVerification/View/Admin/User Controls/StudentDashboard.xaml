@@ -22,6 +22,7 @@
                         <ColumnDefinition Width="2*"/>
                         <ColumnDefinition Width="1.2*"/>
                         <ColumnDefinition Width="1.2*"/>
+                        <ColumnDefinition Width="1.2*"/>
                         <ColumnDefinition Width="1.5*"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
@@ -42,7 +43,12 @@
                               ItemsSource="{Binding Years}" 
                               SelectedItem="{Binding SelectedYear, UpdateSourceTrigger=PropertyChanged}"/>
 
-                    <ComboBox Name="cbProgram" Height="40" Grid.Column="3" Margin="0,0,10,0"
+                    <ComboBox Name="cbSchoolYear" Height="40" Grid.Column="3" Margin="0,0,10,0"
+                              materialDesign:HintAssist.Hint="School Year"
+                              ItemsSource="{Binding SchoolYears}" 
+                              SelectedItem="{Binding SelectedSchoolYear, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <ComboBox Name="cbProgram" Height="40" Grid.Column="4" Margin="0,0,10,0"
                               materialDesign:HintAssist.Hint="Program"
                               ItemsSource="{Binding Programs}" 
                               SelectedItem="{Binding SelectedProgram, UpdateSourceTrigger=PropertyChanged}"/>
@@ -51,12 +57,12 @@
                             Foreground="White" FontSize="14" FontWeight="SemiBold" 
                             BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
                             materialDesign:ButtonAssist.CornerRadius="8"
-                            Command="{Binding AddStudentCommand}" Grid.Column="4"/>
+                            Command="{Binding AddStudentCommand}" Grid.Column="5"/>
                     <Button Content="Upload Student" Height="40" Padding="20,0" Background="#28A745"
                             Foreground="White" FontSize="14" FontWeight="SemiBold" 
                             BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
                             materialDesign:ButtonAssist.CornerRadius="8" Margin="10,0,0,0"
-                            Command="{Binding UploadStudentCommand}" Grid.Column="5"/>
+                            Command="{Binding UploadStudentCommand}" Grid.Column="6"/>
                 </Grid>
             </Border>
 

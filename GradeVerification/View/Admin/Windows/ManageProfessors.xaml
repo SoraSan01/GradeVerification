@@ -1,0 +1,118 @@
+﻿<Window x:Class="GradeVerification.View.Admin.Windows.ManageProfessors"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        WindowStyle="None"
+        WindowStartupLocation="CenterScreen"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Title="Manage Professors" Height="490" Width="750">
+    <Border CornerRadius="5" Background="#ffffff" MouseDown="Border_MouseDown">
+        <Grid>
+            <!-- Define two columns: Left for the form, Right for the gradient info -->
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="300"/>
+            </Grid.ColumnDefinitions>
+            <!-- Two rows: one for header, one for main content -->
+            <Grid.RowDefinitions>
+                <RowDefinition Height="45"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="55,0,0,0" VerticalAlignment="Center">
+                <materialDesign:PackIcon Kind="AccountTie" Width="20" Height="20" Foreground="#009688"/>
+                <TextBlock Text="Manage Professors" FontSize="16" FontWeight="SemiBold" Foreground="#009688" Margin="10,0,0,0"/>
+            </StackPanel>
+
+            <!-- Top Menu Buttons (Minimize & Close) -->
+            <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Left" Margin="220,0,0,0">
+                <Button Style="{StaticResource menuButton2}" Click="btn_Minimize">
+                    <materialDesign:PackIcon Kind="WindowMinimize" Width="18" Height="18"/>
+                </Button>
+                <Button Style="{StaticResource menuButton2}" Click="btn_Close">
+                    <materialDesign:PackIcon Kind="Close" Width="18" Height="18"/>
+                </Button>
+            </StackPanel>
+
+            <!-- Right Section -->
+            <Border Grid.Row="1" Grid.Column="1" CornerRadius="0 0 5 0">
+                <Border.Background>
+                    <!-- A teal gradient for the right panel -->
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#009688" Offset="0.2"/>
+                        <GradientStop Color="#00695C" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <StackPanel Margin="60 0 10 0">
+                    <materialDesign:PackIcon Kind="AccountTie" Width="80" Height="80" Foreground="#ffffff" Margin="0 40 0 20"/>
+                    <TextBlock Foreground="#ffffff" FontWeight="SemiBold" TextAlignment="Center" FontSize="20" Text="Manage Professors"/>
+                    <TextBlock Foreground="#e6e8ec" FontWeight="Light" TextAlignment="Center" FontSize="13" LineHeight="24"
+                               TextWrapping="Wrap" Margin="40 15 40 20" Text="Add or remove professors from the list."/>
+                </StackPanel>
+            </Border>
+
+            <!-- Left Section -->
+            <Border Grid.Row="1" Background="#f2f5f8" CornerRadius="0 0 0 5">
+                <Grid VerticalAlignment="Center" Margin="70 0 -60 0">
+                    <Border CornerRadius="7" Background="#ffffff">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="30" ShadowDepth="5" Direction="-130" Opacity="0.1"/>
+                        </Border.Effect>
+                        <Grid Margin="20 0">
+                            <Grid.RowDefinitions>
+                                <!-- Title -->
+                                <RowDefinition Height="Auto"/>
+                                <!-- Separator -->
+                                <RowDefinition Height="Auto"/>
+                                <!-- New Professor Entry -->
+                                <RowDefinition Height="*"/>
+                                <!-- List of Professors -->
+                                <RowDefinition Height="*"/>
+                                <!-- Add/Delete Buttons -->
+                                <RowDefinition Height="*"/>
+                                <!-- (Optional) Back Button -->
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Form Title -->
+                            <StackPanel Orientation="Horizontal" Margin="20 20 0 0">
+                                <materialDesign:PackIcon Kind="AccountTie" Width="40" Height="40" Foreground="#374655"/>
+                                <TextBlock Text="Professor Details" Foreground="#374655" FontSize="18" Margin="15 0 0 0" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <Separator Grid.Row="1" Height="1" Background="#e1e6eb" Margin="20,10,20,10"/>
+
+                            <!-- New Professor Entry -->
+                            <TextBox Grid.Row="2" Margin="20"
+                                     materialDesign:HintAssist.Hint="Enter New Professor Name"
+                                     Text="{Binding NewProfessorInput, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <!-- ListBox of Professors -->
+                            <ListBox Grid.Row="3" Margin="20" Style="{StaticResource MaterialDesignListBox}"
+                                     ItemsSource="{Binding Professors}"
+                                     DisplayMemberPath="Name"
+                                     SelectedItem="{Binding SelectedProfessor}" 
+                                     materialDesign:HintAssist.Hint="Existing Professors"/>
+
+                            <!-- Add and Delete Buttons -->
+                            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="20">
+                                <Button Content="Add" Width="100" Style="{StaticResource mainButton}" 
+                                        Command="{Binding AddProfessorCommand}" Margin="5"/>
+                                <Button Content="Delete" Width="100" Style="{StaticResource secondaryButton}" 
+                                        Command="{Binding DeleteProfessorCommand}" Margin="5"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

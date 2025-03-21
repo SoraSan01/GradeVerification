@@ -40,6 +40,7 @@ namespace GradeVerification.ViewModel
             LoadSubjectsCommand = new RelayCommand(LoadGrades);
             SaveCommand = new RelayCommand(SaveGrades);
             CancelCommand = new RelayCommand(Cancel);
+            DeleteSubjectCommand = new RelayCommand(DeleteSubject);
             FilteredSubjects = new ObservableCollection<GradeEntry>();
 
             // Options for filtering.
@@ -91,6 +92,7 @@ namespace GradeVerification.ViewModel
         public ICommand LoadSubjectsCommand { get; }
         public ICommand SaveCommand { get; }
         public ICommand CancelCommand { get; }
+        public ICommand DeleteSubjectCommand { get; }
 
         /// <summary>
         /// Loads all grade entries for all student records matching the SchoolId.
@@ -211,6 +213,34 @@ namespace GradeVerification.ViewModel
             _notifier.ShowSuccess("Grades saved successfully.");
         }
 
+        /// <summary>
+        /// Deletes the selected grade entry (subject) from the student’s subject list.
+        /// </summary>
+        private void DeleteSubject(object parameter)
+        {
+            if (parameter is GradeEntry entry)
+            {
+                // Optionally add confirmation dialog.
+                if (MessageBox.Show($"Are you sure you want to delete subject '{entry.SubjectCode}' for the student?",
+                                    "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No)
+                    return;
+
+                // Remove from the database if the grade record exists.
+                var gradeRecord = _context.Grade.FirstOrDefault(g => g.GradeId == entry.GradeId);
+                if (gradeRecord != null)
+                {
+                    _context.Grade.Remove(gradeRecord);
+                }
+
+                // Remove from local collections.
+                _allGradeEntries.Remove(entry);
+                FilteredSubjects.Remove(entry);
+
+                _context.SaveChanges();
+                _notifier.ShowSuccess("Subject deleted successfully.");
+            }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string propertyName) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -234,6 +264,9 @@ namespace GradeVerification.ViewModel
         public string StudentYear { get; set; }
         public string StudentSemester { get; set; }
 
+        // List of allowed non-numeric grade codes.
+        public List<string> AllowedGradeValues { get; } = new List<string> { "INC", "N/A", "NGS", "NN", "-", "DROP" };
+
         // IDataErrorInfo implementation for GradeScore.
         public string Error => null;
         public string this[string columnName]
@@ -242,10 +275,18 @@ namespace GradeVerification.ViewModel
             {
                 if (columnName == nameof(GradeScore))
                 {
+                    // Allow an empty grade entry.
                     if (string.IsNullOrWhiteSpace(GradeScore))
-                        return "Grade is required.";
+                        return null;
+
+                    // Check if the entered value is one of the allowed special values.
+                    var allowedSpecialGrades = new[] { "INC", "N/A", "NGS", "NN", "-", "DROP" };
+                    if (allowedSpecialGrades.Contains(GradeScore.Trim(), StringComparer.OrdinalIgnoreCase))
+                        return null;
+
+                    // Otherwise, validate that the input is numeric and between 0 and 100.
                     if (!double.TryParse(GradeScore, out double grade))
-                        return "Grade must be numeric.";
+                        return "Grade must be numeric or one of: INC, N/A, NGS, NN, -, DROP.";
                     if (grade < 0 || grade > 100)
                         return "Grade must be between 0 and 100.";
                 }

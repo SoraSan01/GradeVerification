@@ -52,33 +52,58 @@
                                   RowStyle="{DynamicResource DataGridRowStyle1}"
                                   ColumnHeaderStyle="{DynamicResource DataGridColumnHeaderStyle1}"
                                   CellStyle="{DynamicResource DataGridCellStyle1}" 
-                                  AutoGenerateColumns="False">
+                                  AutoGenerateColumns="False" MinRowHeight="40" HorizontalAlignment="Center">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Subject" Binding="{Binding SubjectCode}" IsReadOnly="True"/>
-                                <!-- Replaced DataGridTextColumn with a template column for editing GradeScore -->
-                                <DataGridTemplateColumn Header="Grade">
+                                <DataGridTextColumn Header="Subject" Binding="{Binding SubjectCode}" IsReadOnly="True" Width="*" />
+                                <!-- Improved Grade Column -->
+                                <DataGridTemplateColumn Header="Grade" Width="*">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Border Background="LightGreen" Padding="2">
+                                            <Border Padding="2" CornerRadius="3" BorderBrush="DarkGreen" BorderThickness="1">
                                                 <TextBlock Text="{Binding GradeScore}" 
-                                                   HorizontalAlignment="Center" 
-                                                   VerticalAlignment="Center"/>
+                           Height="25"
+                                                           FontSize="16"
+                           Style="{StaticResource MaterialDesignHelperTextBlock}"
+                           HorizontalAlignment="Center" 
+                           VerticalAlignment="Center"
+                           ToolTip="Click here to enter the grade"/>
                                             </Border>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                     <DataGridTemplateColumn.CellEditingTemplate>
                                         <DataTemplate>
-                                            <TextBox Text="{Binding GradeScore, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True}" 
-                                                     Background="LightGreen" 
-                                                     BorderBrush="DarkOrange" 
-                                                     BorderThickness="2"
-                                                     FontSize="16"
-                                                     Padding="4"
-                                                     HorizontalContentAlignment="Center"
-                                                     VerticalContentAlignment="Center"
-                                                     ToolTip="Click here to enter the grade"/>
+                                            <ComboBox IsEditable="True"
+                      Text="{Binding GradeScore, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"
+                      ItemsSource="{Binding AllowedGradeValues}"
+                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                      BorderThickness="1"
+                      BorderBrush="DarkGreen"
+                      FontSize="16"
+                      Padding="0,0,5,0"
+                      Height="25"
+                      HorizontalContentAlignment="Center"
+                      VerticalContentAlignment="Center"
+                      ToolTip="Click here to enter the grade"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellEditingTemplate>
+                                </DataGridTemplateColumn>
+
+                                <!-- Actions Column -->
+                                <DataGridTemplateColumn Header="Actions" Width="*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Command="{Binding DataContext.DeleteSubjectCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"
+                                                    Margin="5"
+                                                    Width="30"
+                                                    Height="30"
+                                                    Style="{StaticResource gridRemoveButton}">
+                                                <materialDesign:PackIcon Kind="Delete" Style="{StaticResource gridButtonIcon}"
+                                                                         Height="20" Width="20"/>
+                                            </Button>
+                                            
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>

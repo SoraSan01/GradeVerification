@@ -11,27 +11,18 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using System.Text.RegularExpressions;
-using System.Windows.Input;
 
 namespace GradeVerification.View.Admin.Windows
 {
     /// <summary>
-    /// Interaction logic for EnterGrade.xaml
+    /// Interaction logic for PrintPreviewWindow.xaml
     /// </summary>
-    public partial class EnterGrade : Window
+    public partial class PrintPreviewWindow : Window
     {
-        public EnterGrade()
+        public PrintPreviewWindow(FixedDocument document)
         {
             InitializeComponent();
-        }
-
-        private void Border_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            if (e.ChangedButton == MouseButton.Left)
-            {
-                this.DragMove();
-            }
+            docViewer.Document = document;
         }
     }
 }

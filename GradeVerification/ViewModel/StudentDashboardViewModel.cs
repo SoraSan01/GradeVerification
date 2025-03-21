@@ -12,6 +12,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 using ToastNotifications;
 using ToastNotifications.Lifetime;
 using ToastNotifications.Messages;
@@ -22,39 +23,51 @@ namespace GradeVerification.ViewModel
     public class StudentDashboardViewModel : INotifyPropertyChanged
     {
         private readonly Notifier _notifier;
+        private readonly DispatcherTimer _filterTimer;
+
         public ObservableCollection<Student> Students { get; set; } = new ObservableCollection<Student>();
         private ObservableCollection<Student> _allStudents = new ObservableCollection<Student>();
 
-        public ObservableCollection<string> Semesters { get; set; } = new ObservableCollection<string> { "First Semester", "Second Semester", "Summer" };
-        public ObservableCollection<string> Years { get; set; } = new ObservableCollection<string> { "First Year", "Second Year", "Third Year", "Fourth Year" };
+        public ObservableCollection<string> Semesters { get; set; } = new ObservableCollection<string>();
+        public ObservableCollection<string> Years { get; set; } = new ObservableCollection<string>();
         public ObservableCollection<string> Programs { get; set; } = new ObservableCollection<string>();
+        // New SchoolYears collection.
+        public ObservableCollection<string> SchoolYears { get; set; } = new ObservableCollection<string>();
 
         private string _searchText;
         public string SearchText
         {
             get => _searchText;
-            set { _searchText = value; OnPropertyChanged(); FilterStudents(); }
+            set { _searchText = value; OnPropertyChanged(); ResetFilterTimer(); }
         }
 
         private string _selectedSemester;
         public string SelectedSemester
         {
             get => _selectedSemester;
-            set { _selectedSemester = value; OnPropertyChanged(); FilterStudents(); }
+            set { _selectedSemester = value; OnPropertyChanged(); ResetFilterTimer(); }
         }
 
         private string _selectedYear;
         public string SelectedYear
         {
             get => _selectedYear;
-            set { _selectedYear = value; OnPropertyChanged(); FilterStudents(); }
+            set { _selectedYear = value; OnPropertyChanged(); ResetFilterTimer(); }
+        }
+
+        // New SelectedSchoolYear property.
+        private string _selectedSchoolYear;
+        public string SelectedSchoolYear
+        {
+            get => _selectedSchoolYear;
+            set { _selectedSchoolYear = value; OnPropertyChanged(); ResetFilterTimer(); }
         }
 
         private string _selectedProgram;
         public string SelectedProgram
         {
             get => _selectedProgram;
-            set { _selectedProgram = value; OnPropertyChanged(); FilterStudents(); }
+            set { _selectedProgram = value; OnPropertyChanged(); ResetFilterTimer(); }
         }
 
         // Commands for various actions.
@@ -76,6 +89,10 @@ namespace GradeVerification.ViewModel
                 cfg.Dispatcher = Application.Current.Dispatcher;
             });
 
+            // Initialize and configure the filter debounce timer.
+            _filterTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+            _filterTimer.Tick += FilterTimer_Tick;
+
             AddStudentCommand = new RelayCommand(AddStudent);
             EditStudentCommand = new RelayCommand(EditStudent, CanModifyStudent);
             DeleteStudentCommand = new RelayCommand(async param => await DeleteStudent(param), CanModifyStudent);
@@ -87,7 +104,26 @@ namespace GradeVerification.ViewModel
         }
 
         /// <summary>
+        /// Resets and starts the debounce timer.
+        /// </summary>
+        private void ResetFilterTimer()
+        {
+            _filterTimer.Stop();
+            _filterTimer.Start();
+        }
+
+        /// <summary>
+        /// Called when the debounce timer elapses.
+        /// </summary>
+        private void FilterTimer_Tick(object sender, EventArgs e)
+        {
+            _filterTimer.Stop();
+            FilterStudents();
+        }
+
+        /// <summary>
         /// Loads all students asynchronously and updates the master and filtered collections.
+        /// Also populates the Programs and SchoolYears collections.
         /// </summary>
         private async void LoadStudentsAsync()
         {
@@ -101,17 +137,38 @@ namespace GradeVerification.ViewModel
                         _allStudents.Clear();
                         Students.Clear();
                         Programs.Clear();
+                        SchoolYears.Clear();
 
                         foreach (var student in studentList)
                         {
                             _allStudents.Add(student);
                             Students.Add(student);
+
+                            // Populate YearLevel collection.
+                            if (!Years.Contains(student.Year))
+                            {
+                                Years.Add(student.Year);
+                            }
+
+                            // Populate Semester collection.
+                            if (!Semesters.Contains(student.Semester))
+                            {
+                                Semesters.Add(student.Semester);
+                            }
+
+                            // Populate Programs collection.
                             if (!Programs.Contains(student.AcademicProgram.ProgramCode))
                             {
                                 Programs.Add(student.AcademicProgram.ProgramCode);
                             }
+
+                            // Populate SchoolYears collection.
+                            // Assumes student.SchoolYear exists (e.g. "2022-2023").
+                            if (!string.IsNullOrWhiteSpace(student.SchoolYear) && !SchoolYears.Contains(student.SchoolYear))
+                            {
+                                SchoolYears.Add(student.SchoolYear);
+                            }
                         }
-                        // Optionally, raise a property changed for an IsEmpty property.
                     });
                 }
             }
@@ -127,23 +184,29 @@ namespace GradeVerification.ViewModel
         /// </summary>
         private void FilterStudents()
         {
-            Students.Clear();
-            foreach (var student in _allStudents)
-            {
-                bool matchesSearch = string.IsNullOrWhiteSpace(SearchText) ||
-                                     student.FullName.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                     student.SchoolId.Contains(SearchText);
-                bool matchesSemester = string.IsNullOrWhiteSpace(SelectedSemester) || student.Semester.Equals(SelectedSemester, StringComparison.OrdinalIgnoreCase);
-                bool matchesYear = string.IsNullOrWhiteSpace(SelectedYear) || student.Year.Equals(SelectedYear, StringComparison.OrdinalIgnoreCase);
-                bool matchesProgram = string.IsNullOrWhiteSpace(SelectedProgram) || student.AcademicProgram.ProgramCode.Equals(SelectedProgram, StringComparison.OrdinalIgnoreCase);
+            var filtered = _allStudents.Where(student =>
+                (string.IsNullOrWhiteSpace(SearchText) ||
+                 student.FullName.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                 student.SchoolId.Contains(SearchText)) &&
+                (string.IsNullOrWhiteSpace(SelectedSemester) ||
+                 student.Semester.Equals(SelectedSemester, StringComparison.OrdinalIgnoreCase)) &&
+                (string.IsNullOrWhiteSpace(SelectedYear) ||
+                 student.Year.Equals(SelectedYear, StringComparison.OrdinalIgnoreCase)) &&
+                (string.IsNullOrWhiteSpace(SelectedSchoolYear) ||
+                 student.SchoolYear.Equals(SelectedSchoolYear, StringComparison.OrdinalIgnoreCase)) &&
+                (string.IsNullOrWhiteSpace(SelectedProgram) ||
+                 student.AcademicProgram.ProgramCode.Equals(SelectedProgram, StringComparison.OrdinalIgnoreCase))
+            ).ToList();
 
-                if (matchesSearch && matchesSemester && matchesYear && matchesProgram)
+            // Update the Students collection on the UI thread.
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                Students.Clear();
+                foreach (var student in filtered)
                 {
                     Students.Add(student);
                 }
-            }
-
-            // Optionally, you could show a notification if Students.Count == 0.
+            });
         }
 
         private void AddStudent(object parameter)

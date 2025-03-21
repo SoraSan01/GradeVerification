@@ -7,15 +7,21 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Markup;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using ToastNotifications;
 using ToastNotifications.Lifetime;
 using ToastNotifications.Messages;
 using ToastNotifications.Position;
+using System.Windows.Shapes;
 
 namespace GradeVerification.ViewModel
 {
@@ -100,27 +106,87 @@ namespace GradeVerification.ViewModel
 
         private void PrintWindow(object parameter)
         {
-            if (parameter is not UIElement printArea)
-                return;
-
-            PrintDialog printDialog = new PrintDialog();
-            if (printDialog.ShowDialog() == true)
+            // Retrieve the current ShowGradeWindow instance.
+            var window = Application.Current.Windows.OfType<ShowGradeWindow>().FirstOrDefault();
+            if (window == null || window.MainBorder == null)
             {
-                // Temporarily hide buttons (assumes an extension method FindVisualChildren<Button>())
-                var buttons = printArea.FindVisualChildren<Button>();
-                foreach (var button in buttons)
+                MessageBox.Show("Could not find the main border control!");
+                return;
+            }
+
+            // Determine which UIElement to print: use parameter if it is a UIElement; otherwise, fallback to MainBorder.
+            UIElement printArea = parameter as UIElement ?? window.MainBorder;
+
+            // Save original visibilities so they can be restored later.
+            var originalPrintButtonVisibility = window.PrintButton.Visibility;
+            var originalCloseButtonVisibility = window.CloseButton.Visibility;
+
+            // Temporarily hide the Print and Close buttons.
+            window.PrintButton.Visibility = Visibility.Collapsed;
+            window.CloseButton.Visibility = Visibility.Collapsed;
+            window.MainBorder.UpdateLayout();
+
+            try
+            {
+                // Render the printArea to a bitmap.
+                double dpi = 96;
+                System.Windows.Size size = printArea.RenderSize;
+                if (size.IsEmpty || size.Width == 0 || size.Height == 0)
                 {
-                    button.Visibility = Visibility.Collapsed;
+                    printArea.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+                    printArea.Arrange(new Rect(printArea.DesiredSize));
+                    size = printArea.DesiredSize;
                 }
 
-                printDialog.PrintVisual(printArea, "Printing Student Grades");
+                RenderTargetBitmap rtb = new RenderTargetBitmap(
+                    (int)size.Width,
+                    (int)size.Height,
+                    dpi,
+                    dpi,
+                    PixelFormats.Pbgra32);
+                rtb.Render(printArea);
 
-                foreach (var button in buttons)
+                // Create an Image control (using System.Windows.Controls.Image) to host the bitmap.
+                System.Windows.Controls.Image image = new System.Windows.Controls.Image
                 {
-                    button.Visibility = Visibility.Visible;
-                }
+                    Source = rtb,
+                    Width = size.Width,
+                    Height = size.Height
+                };
+
+                // Create a FixedDocument that will host the preview.
+                FixedDocument fixedDoc = new FixedDocument();
+                // Set the page size to the size of the UI element.
+                fixedDoc.DocumentPaginator.PageSize = size;
+
+                // Create a FixedPage, add the image to it, and wrap it in a PageContent.
+                FixedPage page = new FixedPage
+                {
+                    Width = size.Width,
+                    Height = size.Height
+                };
+                page.Children.Add(image);
+                PageContent pageContent = new PageContent();
+                ((IAddChild)pageContent).AddChild(page);
+                fixedDoc.Pages.Add(pageContent);
+
+                // Create and show the PrintPreviewWindow by passing the FixedDocument to its constructor.
+                var previewWindow = new PrintPreviewWindow(fixedDoc);
+                previewWindow.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("An error occurred during print preview: " + ex.Message);
+            }
+            finally
+            {
+                // Restore the original visibility for the buttons.
+                window.PrintButton.Visibility = originalPrintButtonVisibility;
+                window.CloseButton.Visibility = originalCloseButtonVisibility;
+                window.MainBorder.UpdateLayout();
             }
         }
+
 
         private void CloseWindow(object parameter)
         {

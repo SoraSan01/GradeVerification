@@ -47,6 +47,13 @@
                     <TextBlock Foreground="#ffffff" FontWeight="SemiBold" TextAlignment="Center" FontSize="20" Text="Add Subject"/>
                     <TextBlock Foreground="#e6e8ec" FontWeight="Light" TextAlignment="Center" FontSize="13" LineHeight="24"
                                TextWrapping="Wrap" Margin="40 15 40 20" Text="Fill in the subject details below."/>
+
+                    <Button Content="View Professors" 
+                            Command="{Binding ManageProfessorCommand}" 
+                            Style="{StaticResource GradeEntryButton}" 
+                            Width="200"
+                            Margin="0,10,0,0"/>
+                    
                 </StackPanel>
             </Border>
 
@@ -119,9 +126,11 @@
                                       SelectedItem="{Binding SelectedSemester, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
 
                             <!-- Professor Name -->
-                            <TextBox Grid.Row="5" Grid.Column="0" Margin="10"
-                                     materialDesign:HintAssist.Hint="Professor Name"
-                                     Text="{Binding ProfessorName, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
+                            <ComboBox Grid.Row="5" Grid.Column="0" Margin="10"
+                                      ItemsSource="{Binding Professors}"
+                                      SelectedItem="{Binding SelectedProfessor, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
+                                      DisplayMemberPath="Name"
+                                      materialDesign:HintAssist.Hint="Select Professor"/>
 
                             <!-- Schedule Inputs -->
                             <TextBox Grid.Row="5" Grid.Column="1" Margin="10"

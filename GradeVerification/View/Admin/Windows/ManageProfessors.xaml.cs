@@ -11,27 +11,35 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using System.Text.RegularExpressions;
-using System.Windows.Input;
 
 namespace GradeVerification.View.Admin.Windows
 {
     /// <summary>
-    /// Interaction logic for EnterGrade.xaml
+    /// Interaction logic for ManageProfessors.xaml
     /// </summary>
-    public partial class EnterGrade : Window
+    public partial class ManageProfessors : Window
     {
-        public EnterGrade()
+        public ManageProfessors()
         {
             InitializeComponent();
         }
 
         private void Border_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.Left)
+            if (e.LeftButton == MouseButtonState.Pressed)
             {
                 this.DragMove();
             }
+        }
+
+        private void btn_Close(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
+
+        private void btn_Minimize(object sender, RoutedEventArgs e)
+        {
+            this.WindowState = WindowState.Minimized;
         }
     }
 }

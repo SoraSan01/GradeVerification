@@ -27,8 +27,10 @@ namespace GradeVerification.ViewModel
         private string _selectedYear;
         private string _selectedProgramID;
         private string _selectedSemester;
-        private string _professor;
         private string _schedule;
+        // Remove the old string-based professor property.
+        // Instead, use the following properties:
+        private Professor _selectedProfessor;
 
         private readonly EditSubject _editWindow;
         private readonly Action _onUpdate;
@@ -54,8 +56,10 @@ namespace GradeVerification.ViewModel
             SelectedYear = subject.Year;
             SelectedProgramID = subject.ProgramId;
             SelectedSemester = subject.Semester;
-            Professor = subject.Professor;
-            Schedule = subject.Schedule;
+            // For backward compatibility, if the subject already has a professor name, you can try to select that professor.
+            // Otherwise, SelectedProfessor remains null.
+            // (You might consider matching by name from the loaded professors.)
+            _schedule = subject.Schedule;
 
             // Initialize dropdown lists.
             YearList = new ObservableCollection<string> { "First Year", "Second Year", "Third Year", "Fourth Year" };
@@ -63,9 +67,29 @@ namespace GradeVerification.ViewModel
             ProgramList = new ObservableCollection<AcademicProgram>();
             LoadPrograms();
 
+            // Initialize Professors list.
+            Professors = new ObservableCollection<Professor>();
+            LoadProfessors();
+
             // Create commands with CanExecute based on validation.
             SaveCommand = new RelayCommand(SaveSubject, _ => !HasErrors());
             CancelCommand = new RelayCommand(Cancel);
+            ViewProfessorCommand = new RelayCommand(ViewProfessors);
+        }
+
+        // New command to view/manage professors.
+        public ICommand ViewProfessorCommand { get; }
+
+        private void ViewProfessors(object parameter)
+        {
+            using (var context = new ApplicationDbContext())
+            {
+                var window = new ManageProfessors();
+                window.DataContext = new ManageProfessorViewModel(context);
+                window.Show();
+                // Reload professors after the management window closes.
+                LoadProfessors();
+            }
         }
 
         private void LoadPrograms()
@@ -80,6 +104,31 @@ namespace GradeVerification.ViewModel
             catch (Exception ex)
             {
                 MessageBox.Show($"Failed to load programs: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void LoadProfessors()
+        {
+            try
+            {
+                using (var context = new ApplicationDbContext())
+                {
+                    var profs = context.Professors.OrderBy(p => p.Name).ToList();
+                    Professors.Clear();
+                    foreach (var p in profs)
+                    {
+                        Professors.Add(p);
+                        // Optional: if the current subject's professor name matches, select it.
+                        if (p.Name.Equals(_originalSubject.Professor, StringComparison.OrdinalIgnoreCase))
+                        {
+                            SelectedProfessor = p;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to load professors: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -120,10 +169,11 @@ namespace GradeVerification.ViewModel
             set { _selectedSemester = value; OnPropertyChanged(); }
         }
 
-        public string Professor
+        // New Professor property (ComboBox)
+        public Professor SelectedProfessor
         {
-            get => _professor;
-            set { _professor = value; OnPropertyChanged(); }
+            get => _selectedProfessor;
+            set { _selectedProfessor = value; OnPropertyChanged(); }
         }
 
         public string Schedule
@@ -136,6 +186,7 @@ namespace GradeVerification.ViewModel
         public ObservableCollection<string> YearList { get; }
         public ObservableCollection<string> SemesterList { get; }
         public ObservableCollection<AcademicProgram> ProgramList { get; }
+        public ObservableCollection<Professor> Professors { get; }
 
         // Commands.
         public ICommand SaveCommand { get; }
@@ -143,10 +194,15 @@ namespace GradeVerification.ViewModel
 
         // IDataErrorInfo implementation.
         public string Error => null;
+
+        private bool _hasAttemptedSave = false; // Track if user attempted to save.
+
         public string this[string columnName]
         {
             get
             {
+                if (!_hasAttemptedSave) return null; // Skip validation if save not attempted.
+
                 switch (columnName)
                 {
                     case nameof(SubjectCode):
@@ -173,9 +229,9 @@ namespace GradeVerification.ViewModel
                         if (string.IsNullOrWhiteSpace(SelectedSemester))
                             return "Semester selection is required.";
                         break;
-                    case nameof(Professor):
-                        if (string.IsNullOrWhiteSpace(Professor))
-                            return "Professor Name is required.";
+                    case nameof(SelectedProfessor):
+                        if (SelectedProfessor == null)
+                            return "Professor selection is required.";
                         break;
                     case nameof(Schedule):
                         if (string.IsNullOrWhiteSpace(Schedule))
@@ -186,20 +242,33 @@ namespace GradeVerification.ViewModel
             }
         }
 
-        // Checks whether any field has a validation error.
-        private bool HasErrors() =>
-            !string.IsNullOrEmpty(this[nameof(SubjectCode)]) ||
-            !string.IsNullOrEmpty(this[nameof(SubjectName)]) ||
-            !string.IsNullOrEmpty(this[nameof(Units)]) ||
-            !string.IsNullOrEmpty(this[nameof(SelectedYear)]) ||
-            !string.IsNullOrEmpty(this[nameof(SelectedProgramID)]) ||
-            !string.IsNullOrEmpty(this[nameof(SelectedSemester)]) ||
-            !string.IsNullOrEmpty(this[nameof(Professor)]) ||
-            !string.IsNullOrEmpty(this[nameof(Schedule)]);
+        private bool HasErrors()
+        {
+            return _hasAttemptedSave && (
+                !string.IsNullOrEmpty(this[nameof(SubjectCode)]) ||
+                !string.IsNullOrEmpty(this[nameof(SubjectName)]) ||
+                !string.IsNullOrEmpty(this[nameof(Units)]) ||
+                !string.IsNullOrEmpty(this[nameof(SelectedYear)]) ||
+                !string.IsNullOrEmpty(this[nameof(SelectedProgramID)]) ||
+                !string.IsNullOrEmpty(this[nameof(SelectedSemester)]) ||
+                !string.IsNullOrEmpty(this[nameof(SelectedProfessor)])
+            );
+        }
 
         // Saves the subject after validation.
         private async void SaveSubject(object parameter)
         {
+            _hasAttemptedSave = true; // Activate validation.
+
+            OnPropertyChanged(nameof(SubjectCode)); // Trigger UI validation update.
+            OnPropertyChanged(nameof(SubjectName));
+            OnPropertyChanged(nameof(Units));
+            OnPropertyChanged(nameof(SelectedYear));
+            OnPropertyChanged(nameof(SelectedProgramID));
+            OnPropertyChanged(nameof(SelectedSemester));
+            OnPropertyChanged(nameof(SelectedProfessor));
+            OnPropertyChanged(nameof(Schedule));
+
             if (HasErrors())
             {
                 ShowErrorNotification("Please correct the errors before saving.");
@@ -219,7 +288,7 @@ namespace GradeVerification.ViewModel
                         subjectToUpdate.Year = SelectedYear;
                         subjectToUpdate.ProgramId = SelectedProgramID;
                         subjectToUpdate.Semester = SelectedSemester;
-                        subjectToUpdate.Professor = Professor;
+                        subjectToUpdate.Professor = SelectedProfessor?.Name ?? string.Empty;
                         subjectToUpdate.Schedule = Schedule;
                         await context.SaveChangesAsync();
                     }
