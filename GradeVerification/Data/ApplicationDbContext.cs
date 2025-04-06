@@ -19,6 +19,7 @@ namespace GradeVerification.Data
         public DbSet<SchoolYear> SchoolYears { get; set; }
         public DbSet<YearLevel> YearLevels { get; set; }
         public DbSet<Professor> Professors { get; set; }
+        public DbSet<CompletionExam> CompletionExams { get; set; }
 
         public ApplicationDbContext() { }
 
@@ -39,7 +40,6 @@ namespace GradeVerification.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-
             modelBuilder.Entity<Subject>()
                 .HasOne(s => s.AcademicProgram)
                 .WithMany(p => p.Subjects)
@@ -56,6 +56,26 @@ namespace GradeVerification.Data
                 .HasOne(g => g.Subject)
                 .WithMany(s => s.Grades)
                 .HasForeignKey(g => g.SubjectId);
+
+            modelBuilder.Entity<CompletionExam>(entity =>
+            {
+                entity.HasOne(ce => ce.Student)
+                    .WithMany()
+                    .HasForeignKey(ce => ce.StudentId)
+                    .OnDelete(DeleteBehavior.Restrict); // Change to Restrict
+
+                entity.HasOne(ce => ce.Grade)
+                    .WithMany()
+                    .HasForeignKey(ce => ce.GradeId)
+                    .OnDelete(DeleteBehavior.Restrict); // Change to Restrict
+
+                entity.HasOne(ce => ce.Professor)
+                    .WithMany()
+                    .HasForeignKey(ce => ce.ProfessorId)
+                    .OnDelete(DeleteBehavior.Restrict); // Change to Restrict
+            });
+
+            base.OnModelCreating(modelBuilder);
         }
     }
 

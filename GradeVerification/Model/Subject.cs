@@ -36,6 +36,7 @@ namespace GradeVerification.Model
 
         public string? Schedule { get; set; }
         public string? Professor { get; set; }
+        public bool IsDeleted { get; set; } = false;
 
         // Navigation Property
         public virtual AcademicProgram AcademicProgram { get; set; }

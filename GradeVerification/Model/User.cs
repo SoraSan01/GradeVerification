@@ -26,7 +26,7 @@ namespace GradeVerification.Model
 
         [Required]
         public string Role { get; set; }
-
+        public bool IsDeleted { get; set; } = false;
         public string FullName => $"{FirstName} {LastName}";
     }
 }

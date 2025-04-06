@@ -138,6 +138,7 @@ namespace GradeVerification.ViewModel
         public ICommand InputGradeCommand { get; }
         public ICommand AddSubjectCommand { get; }
         public ICommand EnterGradeCommand { get; }
+        public ICommand AddCompletionGradeCommand { get; set; }
 
         #endregion
 
@@ -148,9 +149,15 @@ namespace GradeVerification.ViewModel
             // Initialize notifier with ToastNotifications configuration.
             _notifier = new Notifier(cfg =>
             {
-                cfg.PositionProvider = new PrimaryScreenPositionProvider(corner: Corner.BottomRight, offsetX: 10, offsetY: 10);
-                cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(notificationLifetime: TimeSpan.FromSeconds(3),
-                    maximumNotificationCount: MaximumNotificationCount.FromCount(5));
+                cfg.PositionProvider = new PrimaryScreenPositionProvider(
+                    corner: Corner.BottomRight,
+                    offsetX: 10,
+                    offsetY: 10);
+
+                cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
+                    notificationLifetime: TimeSpan.FromSeconds(1.5),
+                    maximumNotificationCount: MaximumNotificationCount.FromCount(3));
+
                 cfg.Dispatcher = Application.Current.Dispatcher;
             });
 
@@ -160,6 +167,7 @@ namespace GradeVerification.ViewModel
             InputGradeCommand = new RelayCommand(InputGrade, param => param is Grade);
             AddSubjectCommand = new RelayCommand(AddSubject);
             EnterGradeCommand = new RelayCommand(EnterGrade);
+            AddCompletionGradeCommand = new RelayCommand(AddCompletionGrade, CanAddCompletionGrade);
 
             // Load initial data.
             _ = LoadFilterOptionsAsync();
@@ -319,6 +327,35 @@ namespace GradeVerification.ViewModel
             {
                 MessageBox.Show("Please select a grade to edit.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
             }
+        }
+
+        private void AddCompletionGrade(object parameter)
+        {
+            if (parameter is Grade selectedGrade)
+            {
+                try
+                {
+                    var dialog = new CompletionGradeDialog();
+                    var vm = new CompletionGradeDialogViewModel(selectedGrade);
+                    dialog.DataContext = vm;
+
+                    if (dialog.ShowDialog() == true)
+                    {
+                        _notifier.ShowSuccess("Completion grade added successfully");
+                        _ = LoadGradesAsync(); // Refresh the list
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error adding completion grade: {ex.Message}",
+                                  "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+        private bool CanAddCompletionGrade(object parameter)
+        {
+            var grade = parameter as Grade;
+            return grade != null && grade.CompletionEligible; // Check if the student is eligible for a completion grade
         }
 
         private void EnterGrade(object parameter)

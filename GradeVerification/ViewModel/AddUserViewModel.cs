@@ -53,14 +53,16 @@ namespace GradeVerification.ViewModel
                     corner: Corner.BottomRight,
                     offsetX: 10,
                     offsetY: 10);
+
                 cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
-                    notificationLifetime: TimeSpan.FromSeconds(3),
-                    maximumNotificationCount: MaximumNotificationCount.FromCount(5));
+                    notificationLifetime: TimeSpan.FromSeconds(1.5),
+                    maximumNotificationCount: MaximumNotificationCount.FromCount(3));
+
                 cfg.Dispatcher = Application.Current.Dispatcher;
             });
 
             _userService = new UserService(dbContext);
-            Roles = new ObservableCollection<string> { "Admin", "Staff" };
+            Roles = new ObservableCollection<string> { "Admin", "Encoder" };
 
             // Set up the command with a CanExecute predicate that checks for validation errors.
             SaveUserCommand = new RelayCommand(async _ => await SaveUserAsync(), _ => !HasErrors());

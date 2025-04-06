@@ -64,10 +64,14 @@ namespace GradeVerification.ViewModel
             _notifier = new Notifier(cfg =>
             {
                 cfg.PositionProvider = new PrimaryScreenPositionProvider(
-                    corner: Corner.BottomRight, offsetX: 10, offsetY: 10);
+                    corner: Corner.BottomRight,
+                    offsetX: 10,
+                    offsetY: 10);
+
                 cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
-                    notificationLifetime: TimeSpan.FromSeconds(3),
-                    maximumNotificationCount: MaximumNotificationCount.FromCount(5));
+                    notificationLifetime: TimeSpan.FromSeconds(1.5),
+                    maximumNotificationCount: MaximumNotificationCount.FromCount(3));
+
                 cfg.Dispatcher = Application.Current.Dispatcher;
             });
 
@@ -186,6 +190,40 @@ namespace GradeVerification.ViewModel
                 window.MainBorder.UpdateLayout();
             }
         }
+
+        //private void PrintWindow(object parameter)
+        //{
+        //    if (parameter is UIElement element)
+        //    {
+        //        // Existing print logic using the provided element
+        //        PrintElement(element);
+        //    }
+        //    else
+        //    {
+        //        // Fallback to main window content
+        //        var window = Application.Current.Windows.OfType<ShowGradeWindow>().FirstOrDefault();
+        //        PrintElement(window?.MainBorder);
+        //    }
+        //}
+
+        //private void PrintElement(UIElement element)
+        //{
+        //    if (element == null) return;
+
+        //    try
+        //    {
+        //        var printDialog = new PrintDialog();
+        //        if (printDialog.ShowDialog() == true)
+        //        {
+        //            printDialog.PrintVisual(element, "Student Grade Report");
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show($"Printing failed: {ex.Message}", "Error",
+        //                      MessageBoxButton.OK, MessageBoxImage.Error);
+        //    }
+        //}
 
 
         private void CloseWindow(object parameter)

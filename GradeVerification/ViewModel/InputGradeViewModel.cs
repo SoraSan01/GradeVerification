@@ -82,8 +82,8 @@ namespace GradeVerification.ViewModel
                     offsetY: 10);
 
                 cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
-                    notificationLifetime: TimeSpan.FromSeconds(3),
-                    maximumNotificationCount: MaximumNotificationCount.FromCount(5));
+                    notificationLifetime: TimeSpan.FromSeconds(1.5),
+                    maximumNotificationCount: MaximumNotificationCount.FromCount(3));
 
                 cfg.Dispatcher = Application.Current.Dispatcher;
             });
@@ -99,6 +99,14 @@ namespace GradeVerification.ViewModel
 
         private void SaveGrade(object parameter)
         {
+            if (string.IsNullOrEmpty(CurrentGrade.Student.FullName) ||
+                string.IsNullOrEmpty(CurrentGrade.Subject.SubjectCode) ||
+                string.IsNullOrEmpty(CurrentGrade.Score))
+            {
+                ShowErrorNotification("All fields are required.");
+                return;
+            }
+
             using (var context = new ApplicationDbContext())
             {
                 if (string.IsNullOrEmpty(CurrentGrade.GradeId)) // New Grade
@@ -112,6 +120,7 @@ namespace GradeVerification.ViewModel
 
                 context.SaveChanges();
             }
+
             ShowSuccessNotification("Grade saved successfully!");
             _onUpdate?.Invoke(); // Notify main view to refresh UI
         }

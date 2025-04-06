@@ -70,22 +70,39 @@ namespace GradeVerification.ViewModel
             set { _selectedProgram = value; OnPropertyChanged(); ResetFilterTimer(); }
         }
 
+        private bool _showDeletedStudents;
+        public bool ShowDeletedStudents
+        {
+            get => _showDeletedStudents;
+            set
+            {
+                _showDeletedStudents = value;
+                OnPropertyChanged();
+                FilterStudents();
+            }
+        }
+
         // Commands for various actions.
         public ICommand AddStudentCommand { get; }
         public ICommand EditStudentCommand { get; }
         public ICommand DeleteStudentCommand { get; }
         public ICommand ShowGradeCommand { get; }
         public ICommand UploadStudentCommand { get; }
+        public ICommand RestoreStudentCommand { get; }
 
         public StudentDashboardViewModel()
         {
             _notifier = new Notifier(cfg =>
             {
                 cfg.PositionProvider = new PrimaryScreenPositionProvider(
-                    corner: Corner.BottomRight, offsetX: 10, offsetY: 10);
+                    corner: Corner.BottomRight,
+                    offsetX: 10,
+                    offsetY: 10);
+
                 cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
-                    notificationLifetime: TimeSpan.FromSeconds(3),
-                    maximumNotificationCount: MaximumNotificationCount.FromCount(5));
+                    notificationLifetime: TimeSpan.FromSeconds(1.5),
+                    maximumNotificationCount: MaximumNotificationCount.FromCount(3));
+
                 cfg.Dispatcher = Application.Current.Dispatcher;
             });
 
@@ -96,6 +113,7 @@ namespace GradeVerification.ViewModel
             AddStudentCommand = new RelayCommand(AddStudent);
             EditStudentCommand = new RelayCommand(EditStudent, CanModifyStudent);
             DeleteStudentCommand = new RelayCommand(async param => await DeleteStudent(param), CanModifyStudent);
+            RestoreStudentCommand = new RelayCommand(async param => await RestoreStudent(param), CanRestoreStudent);
             ShowGradeCommand = new RelayCommand(ShowGrade, CanModifyStudent);
             UploadStudentCommand = new RelayCommand(UploadWindow);
 
@@ -131,44 +149,34 @@ namespace GradeVerification.ViewModel
             {
                 using (var context = new ApplicationDbContext())
                 {
-                    var studentList = await context.Students.Include(s => s.AcademicProgram).ToListAsync();
+                    var studentList = await context.Students
+                        .Include(s => s.AcademicProgram)
+                        .ToListAsync();
+
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         _allStudents.Clear();
-                        Students.Clear();
                         Programs.Clear();
                         SchoolYears.Clear();
+                        Years.Clear();
+                        Semesters.Clear();
 
                         foreach (var student in studentList)
                         {
-                            _allStudents.Add(student);
-                            Students.Add(student);
+                            _allStudents.Add(student); // Add to master list
 
-                            // Populate YearLevel collection.
+                            // Populate filter options
                             if (!Years.Contains(student.Year))
-                            {
                                 Years.Add(student.Year);
-                            }
-
-                            // Populate Semester collection.
                             if (!Semesters.Contains(student.Semester))
-                            {
                                 Semesters.Add(student.Semester);
-                            }
-
-                            // Populate Programs collection.
                             if (!Programs.Contains(student.AcademicProgram.ProgramCode))
-                            {
                                 Programs.Add(student.AcademicProgram.ProgramCode);
-                            }
-
-                            // Populate SchoolYears collection.
-                            // Assumes student.SchoolYear exists (e.g. "2022-2023").
                             if (!string.IsNullOrWhiteSpace(student.SchoolYear) && !SchoolYears.Contains(student.SchoolYear))
-                            {
                                 SchoolYears.Add(student.SchoolYear);
-                            }
                         }
+
+                        FilterStudents(); // Apply initial filter
                     });
                 }
             }
@@ -195,10 +203,10 @@ namespace GradeVerification.ViewModel
                 (string.IsNullOrWhiteSpace(SelectedSchoolYear) ||
                  student.SchoolYear.Equals(SelectedSchoolYear, StringComparison.OrdinalIgnoreCase)) &&
                 (string.IsNullOrWhiteSpace(SelectedProgram) ||
-                 student.AcademicProgram.ProgramCode.Equals(SelectedProgram, StringComparison.OrdinalIgnoreCase))
+                 student.AcademicProgram.ProgramCode.Equals(SelectedProgram, StringComparison.OrdinalIgnoreCase)) &&
+                (student.IsDeleted == false || ShowDeletedStudents) // Explicitly handle deletion status
             ).ToList();
 
-            // Update the Students collection on the UI thread.
             Application.Current.Dispatcher.Invoke(() =>
             {
                 Students.Clear();
@@ -245,7 +253,9 @@ namespace GradeVerification.ViewModel
                     {
                         using (var context = new ApplicationDbContext())
                         {
-                            context.Students.Remove(studentToDelete);
+                            // Attach the student if not already tracked
+                            context.Students.Attach(studentToDelete);
+                            studentToDelete.IsDeleted = true;
                             await context.SaveChangesAsync();
                             LoadStudentsAsync();
                         }
@@ -260,7 +270,42 @@ namespace GradeVerification.ViewModel
             }
         }
 
+        private async Task RestoreStudent(object parameter)
+        {
+            if (parameter is Student studentToRestore)
+            {
+                var result = MessageBox.Show($"Are you sure you want to restore {studentToRestore.FullName}?",
+                    "Confirm Restore", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    try
+                    {
+                        using (var context = new ApplicationDbContext())
+                        {
+                            // Attach the student if not already tracked
+                            context.Students.Attach(studentToRestore);
+                            studentToRestore.IsDeleted = false;
+                            await context.SaveChangesAsync();
+                            LoadStudentsAsync();
+                        }
+                        ShowSuccessNotification("Student restored successfully!");
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Error restoring student: {ex.Message}");
+                        ShowErrorNotification("Error restoring student.");
+                    }
+                }
+            }
+        }
+
+
         private bool CanModifyStudent(object parameter) => parameter is Student;
+        private bool CanRestoreStudent(object parameter)
+        {
+            return parameter is Student student && student.IsDeleted;
+        }
 
         private void ShowGrade(object parameter)
         {
@@ -272,6 +317,23 @@ namespace GradeVerification.ViewModel
                 };
                 showGradeWindow.ShowDialog();
             }
+
+            //if (parameter is Student student)
+            //{
+            //    var window = new ShowGradeWindow
+            //    {
+            //        DataContext = new ShowGradeViewModel(student)
+            //    };
+
+            //    // Show window and immediately print
+            //    window.Loaded += (sender, e) =>
+            //    {
+            //        var vm = (ShowGradeViewModel)window.DataContext;
+            //        vm.PrintCommand.Execute(window.MainBorder);
+            //    };
+
+            //    window.ShowDialog();
+            //}
         }
 
         private void UploadWindow(object parameter)

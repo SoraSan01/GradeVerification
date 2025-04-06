@@ -3,11 +3,17 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" 
+        xmlns:local="clr-namespace:GradeVerification.Converters"
         mc:Ignorable="d"
         Title="Student Grades" Height="750" Width="700"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent">
+
+    <Window.Resources>
+        <local:GradeDisplayConverter x:Key="GradeDisplayConverter"/>
+        <local:GradeColorConverter x:Key="GradeColorConverter"/>
+    </Window.Resources>
 
     <Grid x:Name="MainGrid">
         <Border x:Name="MainBorder" CornerRadius="10" Background="White" Padding="15" Margin="10">
@@ -105,13 +111,16 @@
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Subject" FontSize="15" Binding="{Binding Subject.SubjectCode}" Width="*" />
                                 <DataGridTextColumn Header="Schedule" FontSize="15" Binding="{Binding Subject.Schedule}" Width="*" />
-                                <DataGridTextColumn Header="Professor" FontSize="15" Binding="{Binding Subject.Professor}" Width="*" />
+                                <DataGridTextColumn Header="Professor" FontSize="15" Binding="{Binding ProfessorName}" Width="*" />
+
                                 <DataGridTemplateColumn Header="Grade" Width="*">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock FontSize="15" Text="{Binding Score}" 
-                                 Style="{StaticResource GradeTextBlockStyle}" 
-                                 Padding="2" TextAlignment="Center" />
+                                            <TextBlock FontSize="15" 
+                       Text="{Binding Converter={StaticResource GradeDisplayConverter}}"
+                       Foreground="{Binding Converter={StaticResource GradeColorConverter}}"
+                       Padding="2" 
+                       TextAlignment="Center"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

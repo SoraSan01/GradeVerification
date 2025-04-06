@@ -19,7 +19,6 @@ namespace GradeVerification.Model
         [MaxLength(50)]
         public string FirstName { get; set; }
 
-        // New MiddleName property (optional)
         [MaxLength(50)]
         public string MiddleName { get; set; }
 
@@ -37,11 +36,11 @@ namespace GradeVerification.Model
 
         [Required]
         [MaxLength(20)]
-        public string Year { get; set; } // e.g., "1st Year", "2nd Year" (student level)
+        public string Year { get; set; } // e.g., "1st Year", "2nd Year"
 
         [Required]
         [MaxLength(20)]
-        public string SchoolYear { get; set; } // e.g., "2022-2023" (academic year)
+        public string SchoolYear { get; set; } // e.g., "2022-2023"
 
         [Required]
         [MaxLength(50)]
@@ -51,8 +50,11 @@ namespace GradeVerification.Model
         [ForeignKey("AcademicProgram")]
         public string ProgramId { get; set; } // Foreign Key to AcademicProgram
 
-        public virtual AcademicProgram AcademicProgram { get; set; } // Navigation Property
+        public virtual AcademicProgram AcademicProgram { get; set; }
         public virtual ICollection<Grade> Grades { get; set; } = new List<Grade>();
+
+        // Flag to indicate soft deletion
+        public bool IsDeleted { get; set; } = false;
 
         // Updated FullName property to include MiddleName if present
         public string FullName => string.IsNullOrWhiteSpace(MiddleName)
@@ -69,4 +71,5 @@ namespace GradeVerification.Model
             Id = GenerateStudentId();
         }
     }
+
 }

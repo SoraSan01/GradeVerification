@@ -4,9 +4,15 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             xmlns:local="clr-namespace:GradeVerification.View.Admin.User_Controls"
+             xmlns:local="clr-namespace:GradeVerification.View.Admin.User_Controls" 
+             xmlns:local1="clr-namespace:GradeVerification.Converters"
              mc:Ignorable="d"
              MinHeight="640" MinWidth="1030">
+
+    <UserControl.Resources>
+        <local1:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <local1:GradeToColorConverter x:Key="GradeToColorConverter"/>
+    </UserControl.Resources>
 
     <Border CornerRadius="0 10 10 0" Background="#FAFAFA">
         <Grid>
@@ -17,7 +23,7 @@
 
             <!-- Top Panel -->
             <Border Background="White" CornerRadius="10" Margin="20" Padding="15"
-                    materialDesign:ElevationAssist.Elevation="Dp3">
+                materialDesign:ElevationAssist.Elevation="Dp3">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="2*"/>
@@ -29,44 +35,45 @@
 
                     <!-- Search Box -->
                     <TextBox Name="txtSearch" Height="40" Padding="10" Background="#F5F5F5"
-                             materialDesign:HintAssist.Hint="Search Student..."
-                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                             FontSize="14" BorderBrush="#E0E0E0" Grid.Column="0" Margin="0,0,10,0"
-                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+                         materialDesign:HintAssist.Hint="Search Student..."
+                         FontSize="14" BorderBrush="#E0E0E0" Grid.Column="0" Margin="0,0,10,0"
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
 
                     <!-- Semester ComboBox -->
                     <ComboBox Name="cbSemester" Height="40" Grid.Column="1" Margin="0,0,10,0"
-                              materialDesign:HintAssist.Hint="Semester"
-                              ItemsSource="{Binding Semesters}" 
-                              SelectedItem="{Binding SelectedSemester, UpdateSourceTrigger=PropertyChanged}"/>
+                          materialDesign:HintAssist.Hint="Semester"
+                          ItemsSource="{Binding Semesters}" 
+                          SelectedItem="{Binding SelectedSemester, UpdateSourceTrigger=PropertyChanged}"/>
 
                     <!-- Year ComboBox -->
                     <ComboBox Name="cbYear" Height="40" Grid.Column="2" Margin="0,0,10,0"
-                              materialDesign:HintAssist.Hint="Year"
-                              ItemsSource="{Binding Years}" 
-                              SelectedItem="{Binding SelectedYear, UpdateSourceTrigger=PropertyChanged}"/>
+                          materialDesign:HintAssist.Hint="Year"
+                          ItemsSource="{Binding Years}" 
+                          SelectedItem="{Binding SelectedYear, UpdateSourceTrigger=PropertyChanged}"/>
 
                     <!-- Program ComboBox -->
                     <ComboBox Name="cbProgram" Height="40" Grid.Column="3" Margin="0,0,10,0"
-                              materialDesign:HintAssist.Hint="Program"
-                              ItemsSource="{Binding Programs}" 
-                              SelectedItem="{Binding SelectedProgram, UpdateSourceTrigger=PropertyChanged}"/>
+                          materialDesign:HintAssist.Hint="Program"
+                          ItemsSource="{Binding Programs}" 
+                          SelectedItem="{Binding SelectedProgram, UpdateSourceTrigger=PropertyChanged}"/>
 
                     <!-- Buttons -->
                     <StackPanel Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <!-- Add Subject for Non-Scholar Button -->
-                        <Button Content="Enroll Student" Height="40" Padding="10,0" Background="#007BFF"
-                                Foreground="White" FontSize="14" FontWeight="SemiBold" 
-                                BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
-                                materialDesign:ButtonAssist.CornerRadius="8"
-                                Command="{Binding AddSubjectCommand}" Margin="0,0,10,0"/>
+                        <!-- Add Subject Button -->
 
                         <!-- Upload Grades Button -->
                         <Button Content="Upload Grades" Height="40" Padding="10,0" Background="#28A745"
-                                Foreground="White" FontSize="14" FontWeight="SemiBold" 
-                                BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
-                                materialDesign:ButtonAssist.CornerRadius="8"
-                                Command="{Binding UploadFileCommand}"/>
+                            Foreground="White" FontSize="14" FontWeight="SemiBold" 
+                            BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
+                            materialDesign:ButtonAssist.CornerRadius="8"
+                            Command="{Binding UploadFileCommand}" Margin="0,0,10,0"/>
+
+                        <!-- Input Grade Button -->
+                        <Button Content="Input Grade" Height="40" Padding="10,0" Background="#28A745"
+                            Foreground="White" FontSize="14" FontWeight="SemiBold" 
+                            BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
+                            materialDesign:ButtonAssist.CornerRadius="8"
+                            Command="{Binding EnterGradeCommand}"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -74,14 +81,14 @@
             <!-- Grade Data Table -->
             <Border Grid.Row="1" Background="White" CornerRadius="10" Margin="20" Padding="0">
                 <DataGrid Name="dgGrades" Style="{StaticResource DataGridStyle1}"
-                          RowStyle="{DynamicResource DataGridRowStyle1}"
-                          ColumnHeaderStyle="{DynamicResource DataGridColumnHeaderStyle1}"
-                          CellStyle="{DynamicResource DataGridCellStyle1}"
-                          ItemsSource="{Binding Grades}"
-                          AutoGenerateColumns="False"
-                          IsReadOnly="True"
-                          SelectionMode="Single"
-                          SelectionUnit="FullRow">
+                      RowStyle="{DynamicResource DataGridRowStyle1}"
+                      ColumnHeaderStyle="{DynamicResource DataGridColumnHeaderStyle1}"
+                      CellStyle="{DynamicResource DataGridCellStyle1}"
+                      ItemsSource="{Binding Grades}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      SelectionMode="Single"
+                      SelectionUnit="FullRow">
 
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="Grade ID" Width="100">
@@ -112,11 +119,27 @@
 
                         <DataGridTextColumn Header="Subject" Binding="{Binding Subject.SubjectCode}" Width="*"/>
 
+                        <DataGridTemplateColumn Header="Professor" Width="*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Subject.Professor}" TextWrapping="Wrap" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn Header="Schedule" Width="*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Subject.Schedule}" TextWrapping="Wrap" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
                         <DataGridTemplateColumn Header="Grade" Width="*">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <ContentControl Style="{StaticResource GradeTemplate}"
-                                                    Background="{Binding Score, Converter={StaticResource GradeToColorConverter}}">
+                                                Background="{Binding Score, Converter={StaticResource GradeToColorConverter}}">
                                         <TextBlock Text="{Binding Score}" Style="{StaticResource GradeTextStyle}"/>
                                     </ContentControl>
                                 </DataTemplate>
@@ -128,13 +151,17 @@
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                        
-                                        <!-- Grade Entry Button -->
-                                        <Button Style="{StaticResource GradeEntryButton}" Command="{Binding DataContext.InputGradeCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                CommandParameter="{Binding}" Margin="5">
-                                            <materialDesign:PackIcon Kind="Input"/>
+                                        <!-- Add Completion Grade Button (Visible only if eligible) -->
+                                        <Button
+                                        Style="{StaticResource gridEditButton}"
+                                        Command="{Binding DataContext.AddCompletionGradeCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        CommandParameter="{Binding}"
+                                        Visibility="{Binding CompletionEligible, Converter={StaticResource BoolToVisibilityConverter}}"
+                                        Margin="5">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="NotePlus" Margin="0,0,5,0"/>
+                                            </StackPanel>
                                         </Button>
-                                        
                                     </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>

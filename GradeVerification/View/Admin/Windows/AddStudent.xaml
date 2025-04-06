@@ -156,7 +156,7 @@
 
                             <!-- Buttons -->
                             <StackPanel Grid.Row="7" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="20">
-                                <Button Content="Back" Width="100" Command="{Binding BackCommand}" Style="{StaticResource secondaryButton}"/>
+                                <Button Content="Back" Width="150" Command="{Binding BackCommand}" Style="{StaticResource secondaryButton}"/>
                                 <Button Content="Save Student" Width="150" Margin="10 0 0 0"
                                         Command="{Binding SaveStudentCommand}" Style="{StaticResource mainButton}"/>
                             </StackPanel>

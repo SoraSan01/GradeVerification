@@ -12,18 +12,55 @@ namespace GradeVerification.Model
 {
     public class Grade
     {
+        private string? _score;
+        private bool _hasCompletionExam;
+
         [Key]
         public string GradeId { get; set; } = GenerateGradeId();
 
         [Required]
         [ForeignKey("Student")]
-        public string StudentId { get; set; } // Foreign Key to Student's StudentId
+        public string StudentId { get; set; }
 
         [Required]
         [ForeignKey("Subject")]
-        public string SubjectId { get; set; } // Foreign Key to Subject
+        public string SubjectId { get; set; }
 
-        public string? Score { get; set; } // Grade score (can be null initially)
+        [Required]
+        public string ProfessorName { get; set; }
+
+        public string? Score
+        {
+            get => _score;
+            set
+            {
+                _score = value;
+                UpdateCompletionEligibility();
+            }
+        }
+
+        public string? CompletionGrade { get; set; }
+
+        // Determines if eligible for a completion exam
+        public bool CompletionEligible { get; private set; } = false;
+        public bool IsDeleted { get; set; } = false;
+
+        // Indicates if a completion exam exists
+        public bool HasCompletionExam
+        {
+            get => _hasCompletionExam;
+            set
+            {
+                _hasCompletionExam = value;
+                UpdateCompletionEligibility();
+            }
+        }
+
+        // List of non-passing grades
+        private static readonly HashSet<string> NonPassingScores = new HashSet<string>
+        {
+            "INC", "N/A", "NGS", "NN", "-", "DROP"
+        };
 
         [NotMapped]
         public decimal? GradeAsNumber
@@ -37,19 +74,22 @@ namespace GradeVerification.Model
             }
         }
 
-        // Determine if the grade is below passing
         [NotMapped]
-        public bool IsGradeLow => GradeAsNumber.HasValue && GradeAsNumber < 75;
+        public bool IsGradeLow => (Score != null && NonPassingScores.Contains(Score.ToUpper())); // Non-numeric failing scores
 
         // Navigation Properties
         public virtual Student Student { get; set; }
         public virtual Subject Subject { get; set; }
+        private void UpdateCompletionEligibility()
+        {
+            // Eligible if the grade is low and no completion exam exists
+            CompletionEligible = IsGradeLow && !HasCompletionExam;
+        }
 
-        // Generate a unique Grade ID with "GRD-" prefix
         private static string GenerateGradeId()
         {
             return "GRD-" + Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper();
         }
-
     }
+
 }

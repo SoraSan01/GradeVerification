@@ -83,9 +83,11 @@ namespace GradeVerification.ViewModel
                     corner: Corner.BottomRight,
                     offsetX: 10,
                     offsetY: 10);
+
                 cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
-                    notificationLifetime: TimeSpan.FromSeconds(3),
-                    maximumNotificationCount: MaximumNotificationCount.FromCount(5));
+                    notificationLifetime: TimeSpan.FromSeconds(1.5),
+                    maximumNotificationCount: MaximumNotificationCount.FromCount(3));
+
                 cfg.Dispatcher = Application.Current.Dispatcher;
             });
 

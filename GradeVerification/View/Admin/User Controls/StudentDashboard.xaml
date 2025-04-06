@@ -4,13 +4,18 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:GradeVerification.View.Admin.User_Controls"
-             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" 
+             xmlns:local1="clr-namespace:GradeVerification.Converters"
              mc:Ignorable="d"
              MinHeight="600" MinWidth="1030">
+    <UserControl.Resources>
+        <local1:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+    </UserControl.Resources>
     <Border CornerRadius="0 10 10 0" Background="#FAFAFA">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
@@ -65,9 +70,11 @@
                             Command="{Binding UploadStudentCommand}" Grid.Column="6"/>
                 </Grid>
             </Border>
-
+            <Grid Grid.Row="1">
+                <CheckBox Content="Show Deleted Students" IsChecked="{Binding ShowDeletedStudents}" />
+            </Grid>
             <!-- Student Data Table -->
-            <Border Grid.Row="1" Background="White" CornerRadius="10" Margin="20" Padding="0">
+            <Border Grid.Row="2" Background="White" CornerRadius="10" Margin="20" Padding="0">
                 <Grid>
                     <DataGrid Name="dgStudents" ItemsSource="{Binding Students}" 
                               Style="{StaticResource DataGridStyle1}"
@@ -90,10 +97,22 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
+                            <!-- In the Name column DataTemplate -->
                             <DataGridTemplateColumn Header="Name" Width="*">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding FullName}" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding FullName}" TextWrapping="Wrap">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsDeleted}" Value="True">
+                                                            <Setter Property="TextDecorations" Value="Strikethrough"/>
+                                                            <Setter Property="Foreground" Value="Gray"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -130,20 +149,37 @@
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <!-- Show Grade Button -->
                                             <Button Style="{StaticResource GradeEntryButton}" Cursor="Hand" 
-                                                    Command="{Binding DataContext.ShowGradeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                                    CommandParameter="{Binding}">
+                        Command="{Binding DataContext.ShowGradeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                        CommandParameter="{Binding}"
+                        Visibility="{Binding IsDeleted, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=reverse}">
                                                 <materialDesign:PackIcon Kind="Eye"/>
                                             </Button>
+
+                                            <!-- Edit Button -->
                                             <Button Style="{StaticResource gridEditButton}" Cursor="Hand"
-                                                    Command="{Binding DataContext.EditStudentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                    CommandParameter="{Binding}">
+                        Command="{Binding DataContext.EditStudentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        CommandParameter="{Binding}"
+                        Visibility="{Binding IsDeleted, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=reverse}">
                                                 <materialDesign:PackIcon Kind="Edit"/>
                                             </Button>
+
+                                            <!-- Delete button - only show for non-deleted students -->
                                             <Button Style="{StaticResource gridRemoveButton}" Cursor="Hand"
-                                                    Command="{Binding DataContext.DeleteStudentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                    CommandParameter="{Binding}">
+                        Command="{Binding DataContext.DeleteStudentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        CommandParameter="{Binding}"
+                        Visibility="{Binding IsDeleted, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=reverse}">
                                                 <materialDesign:PackIcon Kind="Delete"/>
+                                            </Button>
+
+                                            <!-- Restore button - only show for deleted students -->
+                                            <Button Style="{StaticResource gridEditButton}" Cursor="Hand"
+                        Background="#4CAF50"
+                        Command="{Binding DataContext.RestoreStudentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        CommandParameter="{Binding}"
+                        Visibility="{Binding IsDeleted, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                <materialDesign:PackIcon Kind="Restore"/>
                                             </Button>
                                         </StackPanel>
                                     </DataTemplate>

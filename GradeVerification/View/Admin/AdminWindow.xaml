@@ -138,6 +138,7 @@
                             <TextBlock Text="Logout" Style="{StaticResource menuButtonText}"/>
                         </StackPanel>
                     </Button>
+                    
                 </StackPanel>
             </Border>
 

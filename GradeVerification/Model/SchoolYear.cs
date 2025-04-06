@@ -12,6 +12,7 @@ namespace GradeVerification.Model
         [Key]
         public string Id { get; set; }
         public string SchoolYears { get; set; }
+        public bool IsDeleted { get; set; } = false;
 
         private string GerateSchooYearId()
         {

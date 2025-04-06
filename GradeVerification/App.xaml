@@ -12,9 +12,9 @@
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/ToastNotifications.Messages;component/Themes/Default.xaml" />
             </ResourceDictionary.MergedDictionaries>
-            
-            <local1:GradeToColorConverter x:Key="GradeToColorConverter"/>
-            <local1:GradeToColorConverter2 x:Key="GradeToColorConverter2"/>
+
+            <local1:GradeDisplayConverter x:Key="GradeDisplayConverter"/>
+            <local1:GradeColorConverter x:Key="GradeColorConverter"/>
             <local1:RowCountToHeightConverter x:Key="RowCountToHeightConverter"/>
 
             <Style x:Key="menuButton" TargetType="Button">

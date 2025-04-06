@@ -14,6 +14,7 @@ namespace GradeVerification.Model
 
         [Required]
         public string LevelName { get; set; }
+        public bool IsDeleted { get; set; } = false;
 
         private string GenerateYearId()
         {

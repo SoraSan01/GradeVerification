@@ -13,6 +13,7 @@ namespace GradeVerification.Model
 
         [Required]
         public string ProgramName { get; set; }
+        public bool IsDeleted { get; set; } = false;
 
         // Navigation Property (One-to-Many)
         public virtual ICollection<Subject> Subjects { get; set; } = new List<Subject>();
