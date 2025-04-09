@@ -20,7 +20,7 @@ namespace GradeVerification.Model
         public string FirstName { get; set; }
 
         [MaxLength(50)]
-        public string MiddleName { get; set; }
+        public string? MiddleName { get; set; }
 
         [Required]
         [MaxLength(50)]
@@ -55,6 +55,9 @@ namespace GradeVerification.Model
 
         // Flag to indicate soft deletion
         public bool IsDeleted { get; set; } = false;
+
+        [NotMapped] // This ensures EF Core ignores this property
+        public string ProgramCode { get; set; } // Add this line
 
         // Updated FullName property to include MiddleName if present
         public string FullName => string.IsNullOrWhiteSpace(MiddleName)

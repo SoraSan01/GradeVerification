@@ -86,7 +86,7 @@ namespace GradeVerification.ViewModel
 
                 cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
                     notificationLifetime: TimeSpan.FromSeconds(1.5),
-                    maximumNotificationCount: MaximumNotificationCount.FromCount(3));
+                    maximumNotificationCount: MaximumNotificationCount.FromCount(100));
 
                 cfg.Dispatcher = Application.Current.Dispatcher;
             });

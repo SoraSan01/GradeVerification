@@ -23,6 +23,12 @@ using ToastNotifications.Messages;
 using ToastNotifications.Position;
 using System.Windows.Shapes;
 
+using System.Windows.Documents;
+using System.Windows.Media;
+using System.Windows.Shapes;
+using System.Windows.Controls;
+using System.Printing;
+
 namespace GradeVerification.ViewModel
 {
     public class ShowGradeViewModel : INotifyPropertyChanged
@@ -70,7 +76,7 @@ namespace GradeVerification.ViewModel
 
                 cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
                     notificationLifetime: TimeSpan.FromSeconds(1.5),
-                    maximumNotificationCount: MaximumNotificationCount.FromCount(3));
+                    maximumNotificationCount: MaximumNotificationCount.FromCount(100));
 
                 cfg.Dispatcher = Application.Current.Dispatcher;
             });

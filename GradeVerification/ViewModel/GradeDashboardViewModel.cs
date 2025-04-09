@@ -3,13 +3,18 @@ using GradeVerification.Data;
 using GradeVerification.Model;
 using GradeVerification.View.Admin.Windows;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Win32;
+using PdfSharp.Drawing;
+using PdfSharp.Pdf;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -28,6 +33,7 @@ namespace GradeVerification.ViewModel
         private string _selectedYear;
         private string _selectedProgram;
         private bool _isLoading;
+        private Grade _selectedGrade;
 
         private ObservableCollection<Grade> _grades = new ObservableCollection<Grade>();
         private ObservableCollection<string> _semesters = new ObservableCollection<string>();
@@ -129,6 +135,19 @@ namespace GradeVerification.ViewModel
             set { _isLoading = value; OnPropertyChanged(); }
         }
 
+        public Grade SelectedGrade
+        {
+            get => _selectedGrade;
+            set
+            {
+                if (_selectedGrade != value)
+                {
+                    _selectedGrade = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         #endregion
 
         #region Commands
@@ -139,6 +158,7 @@ namespace GradeVerification.ViewModel
         public ICommand AddSubjectCommand { get; }
         public ICommand EnterGradeCommand { get; }
         public ICommand AddCompletionGradeCommand { get; set; }
+        public ICommand ExportToPdfCommand { get; }
 
         #endregion
 
@@ -156,7 +176,7 @@ namespace GradeVerification.ViewModel
 
                 cfg.LifetimeSupervisor = new TimeAndCountBasedLifetimeSupervisor(
                     notificationLifetime: TimeSpan.FromSeconds(1.5),
-                    maximumNotificationCount: MaximumNotificationCount.FromCount(3));
+                    maximumNotificationCount: MaximumNotificationCount.FromCount(100));
 
                 cfg.Dispatcher = Application.Current.Dispatcher;
             });
@@ -168,6 +188,7 @@ namespace GradeVerification.ViewModel
             AddSubjectCommand = new RelayCommand(AddSubject);
             EnterGradeCommand = new RelayCommand(EnterGrade);
             AddCompletionGradeCommand = new RelayCommand(AddCompletionGrade, CanAddCompletionGrade);
+            ExportToPdfCommand = new RelayCommand(ExportToPdf);
 
             // Load initial data.
             _ = LoadFilterOptionsAsync();
@@ -214,10 +235,11 @@ namespace GradeVerification.ViewModel
                 {
                     var grades = await context.Grade
                         .Include(g => g.Student)
+                            .ThenInclude(s => s.AcademicProgram) // Add this
                         .Include(g => g.Subject)
+                        .AsNoTracking() // Add this to prevent context tracking
                         .ToListAsync();
 
-                    // Update Grades on the UI thread.
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         Grades = new ObservableCollection<Grade>(grades);
@@ -241,9 +263,11 @@ namespace GradeVerification.ViewModel
                 using (var context = new ApplicationDbContext())
                 {
                     var query = context.Grade
-                        .Include(g => g.Student)
-                        .Include(g => g.Subject)
-                        .AsQueryable();
+                    .Include(g => g.Student)
+                    .ThenInclude(s => s.AcademicProgram) // Add this
+                    .Include(g => g.Subject)
+                    .AsNoTracking() // Add this
+                    .AsQueryable();
 
                     if (!string.IsNullOrWhiteSpace(SearchText))
                     {
@@ -352,6 +376,7 @@ namespace GradeVerification.ViewModel
                 }
             }
         }
+
         private bool CanAddCompletionGrade(object parameter)
         {
             var grade = parameter as Grade;
@@ -384,6 +409,178 @@ namespace GradeVerification.ViewModel
             catch (Exception ex)
             {
                 MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ExportToPdf(object parameter)
+        {
+            try
+            {
+                // Get the currently filtered grades
+                if (Grades.Count == 0)
+                {
+                    MessageBox.Show("No grades to export", "Export Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                // Ask user to specify the location to save the PDF file
+                SaveFileDialog saveFileDialog = new SaveFileDialog
+                {
+                    Filter = "PDF files (*.pdf)|*.pdf",
+                    DefaultExt = "pdf",
+                    FileName = "Grade_Report_" + DateTime.Now.ToString("yyyyMMdd_HHmmss")
+                };
+
+                if (saveFileDialog.ShowDialog() == true)
+                {
+                    // Group grades by student to create one report per student
+                    var studentGroups = Grades.GroupBy(g => g.StudentId).ToList();
+
+                    // Create a document
+                    PdfDocument document = new PdfDocument();
+
+                    // Get the current date for the report
+                    var currentDate = DateTime.Now.ToString("MMMM dd, yyyy");
+
+                    foreach (var studentGroup in studentGroups)
+                    {
+                        var student = studentGroup.First().Student;
+
+                        // Get the first grade to extract student information
+                        var firstGrade = studentGroup.First();
+
+                        // Add a page
+                        PdfPage page = document.AddPage();
+                        XGraphics gfx = XGraphics.FromPdfPage(page);
+
+                        // Define fonts
+                        XFont headerFont = new XFont("Arial", 18);
+                        XFont titleFont = new XFont("Arial", 14);
+                        XFont normalFont = new XFont("Arial", 12);
+                        XFont smallFont = new XFont("Arial", 10);
+                        XFont boldFont = new XFont("Arial", 12);
+
+                        // Draw the header
+                        gfx.DrawString("Student Grade Report", headerFont, XBrushes.DarkBlue,
+                            new XRect(0, 30, page.Width, 30), XStringFormats.Center);
+
+                        // Draw the date
+                        gfx.DrawString($"Date: {currentDate}", normalFont, XBrushes.Black,
+                            new XRect(page.Width - 200, 30, 150, 20), XStringFormats.CenterRight);
+
+                        // Draw student information
+                        int yPos = 80;
+                        int indent = 40;
+
+                        gfx.DrawString("Student Information:", titleFont, XBrushes.DarkBlue, indent, yPos);
+                        yPos += 25;
+
+                        gfx.DrawString($"Name: {student.FullName}", normalFont, XBrushes.Black, indent, yPos);
+                        yPos += 20;
+
+                        gfx.DrawString($"School ID: {student.SchoolId}", normalFont, XBrushes.Black, indent, yPos);
+                        yPos += 20;
+
+                        gfx.DrawString($"Program: {student.AcademicProgram?.ProgramName ?? "N/A"}", normalFont, XBrushes.Black, indent, yPos);
+                        yPos += 20;
+
+                        gfx.DrawString($"Year Level: {student.Year}", normalFont, XBrushes.Black, indent, yPos);
+                        yPos += 20;
+
+                        gfx.DrawString($"Semester: {student.Semester}", normalFont, XBrushes.Black, indent, yPos);
+                        yPos += 20;
+
+                        gfx.DrawString($"School Year: {student.SchoolYear}", normalFont, XBrushes.Black, indent, yPos);
+                        yPos += 30;
+
+                        // Draw grades table header
+                        gfx.DrawString("Subject Grades:", titleFont, XBrushes.DarkBlue, indent, yPos);
+                        yPos += 25;
+
+                        // Table column positions
+                        int[] columnPositions = new int[] { indent, indent + 120, indent + 270, indent + 370 };
+                        int rowHeight = 25;
+
+                        // Draw table header
+                        gfx.DrawString("Subject Code", boldFont, XBrushes.Black, columnPositions[0], yPos);
+                        gfx.DrawString("Professor", boldFont, XBrushes.Black, columnPositions[1], yPos);
+                        gfx.DrawString("Schedule", boldFont, XBrushes.Black, columnPositions[2], yPos);
+                        gfx.DrawString("Grade", boldFont, XBrushes.Black, columnPositions[3], yPos);
+
+                        yPos += rowHeight;
+
+                        // Draw horizontal line under header
+                        gfx.DrawLine(new XPen(XColors.Gray, 1),
+                            new XPoint(indent, yPos - 5),
+                            new XPoint(columnPositions[3] + 50, yPos - 5));
+
+                        // Draw rows for each subject
+                        foreach (var grade in studentGroup)
+                        {
+                            gfx.DrawString(grade.Subject?.SubjectCode ?? "-", smallFont, XBrushes.Black, columnPositions[0], yPos);
+                            gfx.DrawString(grade.Subject?.Professor ?? "-", smallFont, XBrushes.Black, columnPositions[1], yPos);
+                            gfx.DrawString(grade.Subject?.Schedule ?? "-", smallFont, XBrushes.Black, columnPositions[2], yPos);
+
+                            // Determine color based on grade value
+                            XBrush gradeBrush = XBrushes.Black;
+                            if (grade.IsGradeLow)
+                            {
+                                gradeBrush = XBrushes.Red;
+                            }
+
+                            gfx.DrawString(grade.Score ?? "-", boldFont, gradeBrush, columnPositions[3], yPos);
+
+                            yPos += rowHeight;
+
+                            // Check if we need a new page
+                            if (yPos > page.Height - 50)
+                            {
+                                page = document.AddPage();
+                                gfx = XGraphics.FromPdfPage(page);
+                                yPos = 50;
+                            }
+                        }
+
+                        // Draw horizontal line at bottom of table
+                        gfx.DrawLine(new XPen(XColors.Gray, 1),
+                            new XPoint(indent, yPos - 5),
+                            new XPoint(columnPositions[3] + 50, yPos - 5));
+
+                        // Add some notes at the bottom
+                        yPos += 20;
+                        gfx.DrawString("Notes:", boldFont, XBrushes.Black, indent, yPos);
+                        yPos += 20;
+                        gfx.DrawString("This is an unofficial grade report. Please contact the registrar for official transcripts.",
+                            smallFont, XBrushes.Black, indent, yPos);
+                    }
+
+                    // Enable Unicode support
+                    Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
+                    // Save the document
+                    document.Save(saveFileDialog.FileName);
+
+                    // Notify the user
+                    _notifier.ShowSuccess("PDF exported successfully!");
+
+                    // Ask if user wants to open the PDF
+                    var openResult = MessageBox.Show("PDF has been created successfully. Do you want to open it now?",
+                        "Export Successful", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                    if (openResult == MessageBoxResult.Yes)
+                    {
+                        // Open the file with the default PDF viewer
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = saveFileDialog.FileName,
+                            UseShellExecute = true
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error exporting to PDF: {ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

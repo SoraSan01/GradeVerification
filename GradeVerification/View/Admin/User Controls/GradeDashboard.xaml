@@ -58,27 +58,35 @@
                               SelectedItem="{Binding SelectedProgram, UpdateSourceTrigger=PropertyChanged}"/>
 
                     <!-- Buttons -->
+                    <!-- Top Panel Buttons -->
                     <StackPanel Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Right">
                         <!-- Add Subject Button -->
                         <Button Content="Add Subject" Height="40" Padding="10,0" Background="#007BFF"
-                                Foreground="White" FontSize="14" FontWeight="SemiBold" 
-                                BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
-                                materialDesign:ButtonAssist.CornerRadius="8"
-                                Command="{Binding AddSubjectCommand}" Margin="0,0,10,0"/>
+            Foreground="White" FontSize="14" FontWeight="SemiBold" 
+            BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
+            materialDesign:ButtonAssist.CornerRadius="8"
+            Command="{Binding AddSubjectCommand}" Margin="0,0,10,0"/>
 
                         <!-- Upload Grades Button -->
                         <Button Content="Upload Grades" Height="40" Padding="10,0" Background="#28A745"
-                                Foreground="White" FontSize="14" FontWeight="SemiBold" 
-                                BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
-                                materialDesign:ButtonAssist.CornerRadius="8"
-                                Command="{Binding UploadFileCommand}" Margin="0,0,10,0"/>
+            Foreground="White" FontSize="14" FontWeight="SemiBold" 
+            BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
+            materialDesign:ButtonAssist.CornerRadius="8"
+            Command="{Binding UploadFileCommand}" Margin="0,0,10,0"/>
 
                         <!-- Input Grade Button -->
                         <Button Content="Input Grade" Height="40" Padding="10,0" Background="#28A745"
-                                Foreground="White" FontSize="14" FontWeight="SemiBold" 
-                                BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
-                                materialDesign:ButtonAssist.CornerRadius="8"
-                                Command="{Binding EnterGradeCommand}"/>
+            Foreground="White" FontSize="14" FontWeight="SemiBold" 
+            BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
+            materialDesign:ButtonAssist.CornerRadius="8"
+            Command="{Binding EnterGradeCommand}" Margin="0,0,10,0"/>
+
+                        <!-- Export to PDF Button -->
+                        <Button Content="Export to PDF" Height="40" Padding="10,0" Background="#FFC107"
+            Foreground="White" FontSize="14" FontWeight="SemiBold" 
+            BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
+            materialDesign:ButtonAssist.CornerRadius="8"
+            Command="{Binding ExportToPdfCommand}"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -92,8 +100,8 @@
                           ItemsSource="{Binding Grades}"
                           AutoGenerateColumns="False"
                           IsReadOnly="True"
-                          SelectionMode="Single"
-                          SelectionUnit="FullRow">
+                          SelectionMode="Extended"
+                          SelectedItem="{Binding SelectedGrade, Mode=TwoWay}">
 
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="Grade ID" Width="100">

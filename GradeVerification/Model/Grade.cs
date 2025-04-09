@@ -26,8 +26,7 @@ namespace GradeVerification.Model
         [ForeignKey("Subject")]
         public string SubjectId { get; set; }
 
-        [Required]
-        public string ProfessorName { get; set; }
+        public string? ProfessorName { get; set; }
 
         public string? Score
         {

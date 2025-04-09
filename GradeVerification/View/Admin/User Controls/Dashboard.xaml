@@ -78,11 +78,10 @@
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="300"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Chart Section -->
-                <Border CornerRadius="20" Padding="35 25" Background="White" Margin="50 0 10 40">
+                <Border CornerRadius="20" Padding="35 25" Background="White" Margin="50 0 50 40">
                     <lvc:CartesianChart Series="{Binding SeriesCollection}" LegendLocation="Top">
                         <lvc:CartesianChart.AxisX>
                             <lvc:Axis Title="Month" Labels="{Binding Labels}"></lvc:Axis>
@@ -91,20 +90,6 @@
                             <lvc:Axis Title="Students" LabelFormatter="{Binding Formatter}"></lvc:Axis>
                         </lvc:CartesianChart.AxisY>
                     </lvc:CartesianChart>
-                </Border>
-
-                <!-- Orders Section -->
-                <Border Grid.Column="1" CornerRadius="20" Padding="0 25" Background="White" Margin="15 0 47 40">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-
-                        <StackPanel Orientation="Horizontal" Margin="20 0 0 15">
-                            <TextBlock Text="Recent Activity" FontSize="18" FontWeight="Bold" Foreground="#495057"/>
-                        </StackPanel>
-                    </Grid>
                 </Border>
             </Grid>
         </Grid>
