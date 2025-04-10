@@ -31,6 +31,7 @@
                         <ColumnDefinition Width="1.5*"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <TextBox Name="txtSearch" Height="40" Padding="10" Background="#F5F5F5"
@@ -61,17 +62,29 @@
                     <Button Content="New Student" Height="40" Padding="20,0" Background="#28A745"
                             Foreground="White" FontSize="14" FontWeight="SemiBold" 
                             BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
-                            materialDesign:ButtonAssist.CornerRadius="8"
                             Command="{Binding AddStudentCommand}" Grid.Column="5"/>
+                    
                     <Button Content="Upload Student" Height="40" Padding="20,0" Background="#28A745"
                             Foreground="White" FontSize="14" FontWeight="SemiBold" 
                             BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
-                            materialDesign:ButtonAssist.CornerRadius="8" Margin="10,0,0,0"
+                            Margin="10,0,0,0"
                             Command="{Binding UploadStudentCommand}" Grid.Column="6"/>
+
+                    <Button Cursor="Hand" Margin="10 0 0 0" Content="Export" FontSize="14"
+                            Padding="20,0" BorderBrush="Transparent" BorderThickness="0"
+                            Background="#28A745" Foreground="White" Grid.Column="7"
+                            Height="40"
+                            Command="{Binding ExportGradeCommand}"
+                            CommandParameter="{Binding SelectedItem, ElementName=dgStudents}"
+                            Visibility="{Binding IsDeleted, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=reverse}">
+                    </Button>
                 </Grid>
             </Border>
             <Grid Grid.Row="1">
-                <CheckBox Content="Show Deleted Students" IsChecked="{Binding ShowDeletedStudents}" />
+                <CheckBox Content="Show Deleted Students" 
+                          Margin="20 0 0 0"
+                          Style="{StaticResource MaterialDesignCheckBox}"
+                          IsChecked="{Binding ShowDeletedStudents}" />
             </Grid>
             <!-- Student Data Table -->
             <Border Grid.Row="2" Background="White" CornerRadius="10" Margin="20" Padding="0">

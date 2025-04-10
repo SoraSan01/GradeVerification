@@ -197,40 +197,6 @@ namespace GradeVerification.ViewModel
             }
         }
 
-        //private void PrintWindow(object parameter)
-        //{
-        //    if (parameter is UIElement element)
-        //    {
-        //        // Existing print logic using the provided element
-        //        PrintElement(element);
-        //    }
-        //    else
-        //    {
-        //        // Fallback to main window content
-        //        var window = Application.Current.Windows.OfType<ShowGradeWindow>().FirstOrDefault();
-        //        PrintElement(window?.MainBorder);
-        //    }
-        //}
-
-        //private void PrintElement(UIElement element)
-        //{
-        //    if (element == null) return;
-
-        //    try
-        //    {
-        //        var printDialog = new PrintDialog();
-        //        if (printDialog.ShowDialog() == true)
-        //        {
-        //            printDialog.PrintVisual(element, "Student Grade Report");
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        MessageBox.Show($"Printing failed: {ex.Message}", "Error",
-        //                      MessageBoxButton.OK, MessageBoxImage.Error);
-        //    }
-        //}
-
 
         private void CloseWindow(object parameter)
         {

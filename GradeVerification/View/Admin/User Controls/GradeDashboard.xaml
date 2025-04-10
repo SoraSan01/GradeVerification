@@ -80,13 +80,6 @@
             BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
             materialDesign:ButtonAssist.CornerRadius="8"
             Command="{Binding EnterGradeCommand}" Margin="0,0,10,0"/>
-
-                        <!-- Export to PDF Button -->
-                        <Button Content="Export to PDF" Height="40" Padding="10,0" Background="#FFC107"
-            Foreground="White" FontSize="14" FontWeight="SemiBold" 
-            BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
-            materialDesign:ButtonAssist.CornerRadius="8"
-            Command="{Binding ExportToPdfCommand}"/>
                     </StackPanel>
                 </Grid>
             </Border>

@@ -3,20 +3,22 @@ using GradeVerification.Data;
 using GradeVerification.Model;
 using GradeVerification.View.Admin.Windows;
 using Microsoft.EntityFrameworkCore;
-using System;
+using PdfSharp.Drawing;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 using System.Windows;
+using PdfSharp.Pdf;
+using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using System.Windows.Threading;
 using ToastNotifications;
 using ToastNotifications.Lifetime;
 using ToastNotifications.Messages;
 using ToastNotifications.Position;
+using Microsoft.Win32;
+using PdfSharp;
+using OpenXmlPowerTools;
 
 namespace GradeVerification.ViewModel
 {
@@ -89,6 +91,7 @@ namespace GradeVerification.ViewModel
         public ICommand ShowGradeCommand { get; }
         public ICommand UploadStudentCommand { get; }
         public ICommand RestoreStudentCommand { get; }
+        public ICommand ExportGradeCommand { get; }
 
         public StudentDashboardViewModel()
         {
@@ -116,6 +119,7 @@ namespace GradeVerification.ViewModel
             RestoreStudentCommand = new RelayCommand(async param => await RestoreStudent(param), CanRestoreStudent);
             ShowGradeCommand = new RelayCommand(ShowGrade, CanModifyStudent);
             UploadStudentCommand = new RelayCommand(UploadWindow);
+            ExportGradeCommand = new RelayCommand(ExportGradeToPdf, CanModifyStudent);
 
             // Load students initially.
             LoadStudentsAsync();
@@ -270,6 +274,7 @@ namespace GradeVerification.ViewModel
             }
         }
 
+
         private async Task RestoreStudent(object parameter)
         {
             if (parameter is Student studentToRestore)
@@ -317,25 +322,253 @@ namespace GradeVerification.ViewModel
                 };
                 showGradeWindow.ShowDialog();
             }
-
-            //if (parameter is Student student)
-            //{
-            //    var window = new ShowGradeWindow
-            //    {
-            //        DataContext = new ShowGradeViewModel(student)
-            //    };
-
-            //    // Show window and immediately print
-            //    window.Loaded += (sender, e) =>
-            //    {
-            //        var vm = (ShowGradeViewModel)window.DataContext;
-            //        vm.PrintCommand.Execute(window.MainBorder);
-            //    };
-
-            //    window.ShowDialog();
-            //}
         }
 
+        private void ExportGradeToPdf(object parameter)
+        {
+            if (parameter is Student student)
+            {
+                try
+                {
+                    var saveFileDialog = new SaveFileDialog
+                    {
+                        Filter = "PDF files (*.pdf)|*.pdf",
+                        DefaultExt = "pdf",
+                        FileName = $"{student.FullName}_Grade_Report_{DateTime.Now:yyyyMMdd_HHmmss}"
+                    };
+
+                    if (saveFileDialog.ShowDialog() == true)
+                    {
+                        using (var document = new PdfDocument())
+                        {
+                            // Load student grades
+                            using (var context = new ApplicationDbContext())
+                            {
+                                // In ExportGradeToPdf method, change the grade query to:
+                                var grades = context.Grade
+                                    .Include(g => g.Subject)
+                                    .Where(g => g.StudentId == student.Id)
+                                    .ToList();  // Remove the Select projection
+
+                                CreatePdfPage(document, student, grades);
+                            }
+
+                            document.Save(saveFileDialog.FileName);
+                        }
+
+                        Process.Start(new ProcessStartInfo(saveFileDialog.FileName) { UseShellExecute = true });
+                        _notifier.ShowSuccess("PDF exported successfully!");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error exporting PDF: {ex.Message}", "Export Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void CreatePdfPage(PdfDocument document, Student student, List<Grade> grades)
+        {
+            // Set custom page size (5.5" x 8.5" - half letter size)
+            var page = document.AddPage();
+            page.Width = 396;  // 5.5 * 72 points
+            page.Height = 612; // 8.5 * 72 points
+            var gfx = XGraphics.FromPdfPage(page);
+
+            // Define colors and fonts
+            var darkGreen = XColor.FromArgb(255, 46, 125, 50);
+            var mediumGreen = XColor.FromArgb(255, 56, 142, 60);
+            var lightGreen = XColor.FromArgb(255, 241, 248, 233);
+
+            var headerFont = new XFont("Arial", 16, XFontStyleEx.Bold);
+            var titleFont = new XFont("Arial", 12, XFontStyleEx.Bold);
+            var normalFont = new XFont("Arial", 10);
+            var smallFont = new XFont("Arial", 8);
+
+            // University Header
+            DrawUniversityHeader(gfx, page, document);
+
+            // Main Title
+            gfx.DrawString("STUDENT GRADE REPORT", titleFont, new XSolidBrush(darkGreen),
+                new XRect(0, 90, page.Width, 20), XStringFormats.TopCenter);
+
+            // Student Information
+            DrawStudentInfo(gfx, page, student, mediumGreen, lightGreen);
+
+            // Grades Table
+            var finalY = DrawGradeTable(gfx, page, document, grades, mediumGreen);
+
+            // Signature Line
+            DrawSignatureLine(gfx, page, finalY);
+
+            // Footer Notes
+            gfx.DrawString("This is an unofficial grade report. Please contact the registrar for official transcripts.",
+                smallFont, XBrushes.Black,
+                new XRect(20, page.Height - 50, page.Width - 40, 20),
+                XStringFormats.TopCenter);
+        }
+
+        private void DrawStudentInfo(XGraphics gfx, PdfPage page, Student student,
+                       XColor labelColor, XColor bgColor)
+        {
+            var infoRect = new XRect(20, 120, page.Width - 40, 110); // Increased height
+            gfx.DrawRectangle(new XSolidBrush(bgColor), infoRect);
+
+            double y = infoRect.Top + 10;
+            double x = infoRect.Left + 10;
+            double colWidth = (infoRect.Width - 20) / 2;
+
+            // Left Column
+            DrawInfoRow(gfx, "Name:", student.FullName, x, y, labelColor);
+            DrawInfoRow(gfx, "ID:", student.SchoolId, x, y + 25, labelColor);
+            DrawInfoRow(gfx, "Year:", student.Year, x, y + 50, labelColor);
+
+            // Right Column
+            DrawInfoRow(gfx, "Program:", student.AcademicProgram?.ProgramCode ?? "N/A", x + colWidth, y, labelColor);
+            DrawInfoRow(gfx, "Semester:", student.Semester, x + colWidth, y + 25, labelColor);
+            DrawInfoRow(gfx, "School Year:", student.SchoolYear, x + colWidth, y + 50, labelColor);
+        }
+
+        private void DrawInfoRow(XGraphics gfx, string label, string value,
+                        double x, double y, XColor labelColor)
+        {
+            var boldFont = new XFont("Arial", 10, XFontStyleEx.Bold);
+            var normalFont = new XFont("Arial", 10);
+
+            gfx.DrawString(label, boldFont, new XSolidBrush(labelColor), x, y);
+            gfx.DrawString(value, normalFont, XBrushes.Black, x + 50, y);
+        }
+
+        private double DrawGradeTable(XGraphics gfx, PdfPage page, PdfDocument document,
+              List<Grade> grades, XColor headerColor)
+        {
+            double[] columnWidths = { 100, 120, 100, 40 };
+            double y = 200;
+            int rowHeight = 20;
+            var currentPageNumber = 1;
+            var headerFont = new XFont("Arial", 10, XFontStyleEx.Bold);
+            string[] headers = { "Subject", "Schedule", "Professor", "Grade" };
+
+            // Draw headers on first page
+            DrawTableHeaders(gfx, page, headerColor, columnWidths, ref y, headers, headerFont);
+
+            for (int i = 0; i < grades.Count; i++)
+            {
+                if (y + rowHeight > page.Height - 100)
+                {
+                    // Create new page
+                    page = document.AddPage();
+                    page.Width = 396;
+                    page.Height = 612;
+                    gfx = XGraphics.FromPdfPage(page);
+                    DrawUniversityHeader(gfx, page, document);
+                    y = 200;
+                    currentPageNumber++;
+
+                    // Draw headers on new page
+                    DrawTableHeaders(gfx, page, headerColor, columnWidths, ref y, headers, headerFont);
+                }
+
+                var grade = grades[i];
+                double x = 20;  // Declare x here
+                var rowFont = new XFont("Arial", 9);
+
+                // Subject Code
+                gfx.DrawString(grade.Subject?.SubjectCode ?? "-", rowFont, XBrushes.Black,
+                    new XRect(x, y, columnWidths[0], rowHeight), XStringFormats.TopLeft);
+                x += columnWidths[0];
+
+                // Schedule
+                gfx.DrawString(grade.Subject?.Schedule ?? "-", rowFont, XBrushes.Black,
+                    new XRect(x, y, columnWidths[1], rowHeight), XStringFormats.TopLeft);
+                x += columnWidths[1];
+
+                // Professor
+                gfx.DrawString(grade.Subject?.Professor ?? "-", rowFont, XBrushes.Black,
+                    new XRect(x, y, columnWidths[2], rowHeight), XStringFormats.TopLeft);
+                x += columnWidths[2];
+
+                // Handle completion grade
+                var gradeValue = !string.IsNullOrEmpty(grade.CompletionGrade)
+                    ? grade.CompletionGrade
+                    : grade.Score ?? "-";
+
+                var gradeBrush = grade.IsGradeLow ? XBrushes.Red : XBrushes.Black;
+                gfx.DrawString(gradeValue, rowFont, gradeBrush,
+                    new XRect(x, y, columnWidths[3], rowHeight), XStringFormats.TopRight);
+
+                y += rowHeight;
+
+                // Draw "Nothing Follows" after last grade
+                if (i == grades.Count - 1)
+                {
+                    y += 5;
+                    gfx.DrawString("- NOTHING FOLLOWS -", new XFont("Arial", 8),
+                        XBrushes.DarkGray, new XRect(20, y, page.Width - 40, 10),
+                        XStringFormats.TopCenter);
+                    y += 15;
+                }
+            }
+
+            return y;
+        }
+
+        private void DrawTableHeaders(XGraphics gfx, PdfPage page, XColor headerColor,
+            double[] columnWidths, ref double y, string[] headers, XFont headerFont)
+        {
+            double x = 20;
+
+            for (int j = 0; j < headers.Length; j++)
+            {
+                gfx.DrawString(headers[j], headerFont, new XSolidBrush(headerColor),
+                    new XRect(x, y, columnWidths[j], 20),
+                    XStringFormats.TopLeft);
+                x += columnWidths[j];
+            }
+
+            y += 25;
+            gfx.DrawLine(new XPen(XColors.Gray, 0.5), 20, y, page.Width - 20, y);
+            y += 5;
+        }
+
+        private void DrawSignatureLine(XGraphics gfx, PdfPage page, double yPosition)
+        {
+            yPosition += 20;
+            gfx.DrawLine(new XPen(XColors.Black, 0.5),
+                page.Width / 2 - 75, yPosition,
+                page.Width / 2 + 75, yPosition);
+            gfx.DrawString("Authorized Signature",
+                new XFont("Arial", 8), XBrushes.Black,
+                new XRect(page.Width / 2 - 75, yPosition + 5, 150, 15),
+                XStringFormats.TopCenter);
+        }
+        private void DrawUniversityHeader(XGraphics gfx, PdfPage page, PdfDocument document)
+        {
+            var darkGreen = XColor.FromArgb(255, 46, 125, 50);
+            var logo = XImage.FromFile("C:\\Users\\admin\\source\\repos\\GradeVerification\\GradeVerification\\Resources\\umlogo.png");
+
+            // Header background
+            gfx.DrawRectangle(new XSolidBrush(darkGreen), 0, 0, page.Width, 80); // Increased height
+
+            // Logo
+            gfx.DrawImage(logo, new XRect(10, 10, 60, 60));
+
+            // University Info
+            gfx.DrawString("University of Manila",
+                new XFont("Arial", 14, XFontStyleEx.Bold),
+                XBrushes.White,
+                new XRect(80, 15, page.Width - 90, 20),
+                XStringFormats.TopLeft);
+
+            gfx.DrawString("546 Mariano V. delos Santos Street, Sampaloc Manila\n" +
+                           "Philippines 1008 | Tel: 8735-5085\n" +
+                           "Email: umnla.edu.ph@gmail.com | Website: http://www.um.edu.ph",
+                new XFont("Arial", 8),
+                XBrushes.White,
+                new XRect(80, 35, page.Width - 90, 40),
+                XStringFormats.TopLeft);
+        }
         private void UploadWindow(object parameter)
         {
             var uploadStudent = new UploadStudent();
