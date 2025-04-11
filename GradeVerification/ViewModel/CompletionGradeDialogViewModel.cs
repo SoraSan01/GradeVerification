@@ -18,22 +18,42 @@ namespace GradeVerification.ViewModel
 {
     public class CompletionGradeDialogViewModel : INotifyPropertyChanged, INotifyDataErrorInfo
     {
+        private readonly CompletionExam _completionExam;
+        private bool _isEditMode;
         private readonly Grade _grade;
         private string _completionGrade;
         private DateTime _examDate;
         private Professor _selectedProfessor;
         private ExamStatus _selectedStatus;
         private readonly Dictionary<string, List<string>> _errors = new Dictionary<string, List<string>>();
+        public bool IsEditMode => _isEditMode;
 
-        public CompletionGradeDialogViewModel(Grade grade)
+        public CompletionGradeDialogViewModel(Grade grade, CompletionExam completionExam = null)
         {
             _grade = grade;
+            _completionExam = completionExam;
+            _isEditMode = completionExam != null;
+
             SaveCompletionCommand = new RelayCommand(SaveCompletion, CanSaveCompletion);
             CancelCommand = new RelayCommand(Cancel);
             _ = LoadProfessorsAsync();
 
             // Initialize default values
-            ExamDate = DateTime.Today;
+            if (_isEditMode)
+            {
+                // In edit mode, populate with existing values
+                CompletionGrade = _completionExam.Score.ToString();
+                ExamDate = _completionExam.ExamDate;
+                SelectedStatus = _completionExam.Status;
+
+                // We'll set the professor once they're loaded
+            }
+            else
+            {
+                // Default values for new completion grade
+                ExamDate = DateTime.Today;
+            }
+
             StatusOptions = Enum.GetValues(typeof(ExamStatus)).Cast<ExamStatus>().ToList();
         }
 
@@ -100,28 +120,58 @@ namespace GradeVerification.ViewModel
             {
                 using (var context = new ApplicationDbContext())
                 {
-                    // Create completion exam
-                    var completionExam = new CompletionExam
+                    if (_isEditMode)
                     {
-                        GradeId = _grade.GradeId,
-                        StudentId = _grade.StudentId,
-                        ProfessorId = SelectedProfessor.Id,
-                        Score = int.Parse(CompletionGrade),
-                        ExamDate = ExamDate,
-                        Status = SelectedStatus
-                    };
+                        // Update existing completion exam
+                        _completionExam.ProfessorId = SelectedProfessor.Id;
+                        _completionExam.Score = int.Parse(CompletionGrade);
+                        _completionExam.ExamDate = ExamDate;
+                        _completionExam.Status = SelectedStatus;
 
-                    // Update grade record
-                    _grade.CompletionGrade = CompletionGrade;
-                    _grade.HasCompletionExam = true;
+                        // Update grade record
+                        var gradeToUpdate = await context.Grade.FindAsync(_grade.GradeId);
+                        if (gradeToUpdate != null)
+                        {
+                            gradeToUpdate.CompletionGrade = CompletionGrade;
+                            context.Grade.Update(gradeToUpdate);
+                        }
 
-                    context.CompletionExams.Add(completionExam);
-                    context.Grade.Update(_grade);
+                        context.CompletionExams.Update(_completionExam);
+                    }
+                    else
+                    {
+                        // Create new completion exam
+                        var completionExam = new CompletionExam
+                        {
+                            GradeId = _grade.GradeId,
+                            StudentId = _grade.StudentId,
+                            ProfessorId = SelectedProfessor.Id,
+                            Score = int.Parse(CompletionGrade),
+                            ExamDate = ExamDate,
+                            Status = SelectedStatus
+                        };
+
+                        // Update grade record
+                        var gradeToUpdate = await context.Grade.FindAsync(_grade.GradeId);
+                        if (gradeToUpdate != null)
+                        {
+                            gradeToUpdate.CompletionGrade = CompletionGrade;
+                            gradeToUpdate.HasCompletionExam = true;
+                            context.Grade.Update(gradeToUpdate);
+                        }
+
+                        context.CompletionExams.Add(completionExam);
+                    }
+
                     await context.SaveChangesAsync();
                 }
 
-                // Close dialog
-                Application.Current.Windows.OfType<CompletionGradeDialog>().FirstOrDefault()?.Close();
+                // Close dialog with success
+                if (parameter is Window window)
+                {
+                    window.DialogResult = true;
+                    window.Close();
+                }
             }
             catch (Exception ex)
             {
@@ -152,6 +202,12 @@ namespace GradeVerification.ViewModel
                         foreach (var professor in professors)
                         {
                             Professors.Add(professor);
+                        }
+
+                        // If in edit mode, set the selected professor
+                        if (_isEditMode)
+                        {
+                            SelectedProfessor = Professors.FirstOrDefault(p => p.Id == _completionExam.ProfessorId);
                         }
                     });
                 }

@@ -23,64 +23,76 @@
 
             <!-- Top Panel -->
             <Border Background="White" CornerRadius="10" Margin="20" Padding="15"
-                    materialDesign:ElevationAssist.Elevation="Dp3">
+        materialDesign:ElevationAssist.Elevation="Dp3">
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="2*"/>
-                        <ColumnDefinition Width="1.2*"/>
-                        <ColumnDefinition Width="1.2*"/>
-                        <ColumnDefinition Width="1.5*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                    <!-- Search Box -->
-                    <TextBox Name="txtSearch" Height="40" Padding="10" Background="#F5F5F5"
-                             materialDesign:HintAssist.Hint="Search Student..."
-                             FontSize="14" BorderBrush="#E0E0E0" Grid.Column="0" Margin="0,0,10,0"
-                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+                    <!-- First row with search, filters and buttons -->
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="1.2*"/>
+                            <ColumnDefinition Width="1.2*"/>
+                            <ColumnDefinition Width="1.5*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-                    <!-- Semester ComboBox -->
-                    <ComboBox Name="cbSemester" Height="40" Grid.Column="1" Margin="0,0,10,0"
-                              materialDesign:HintAssist.Hint="Semester"
-                              ItemsSource="{Binding Semesters}" 
-                              SelectedItem="{Binding SelectedSemester, UpdateSourceTrigger=PropertyChanged}"/>
+                        <!-- Search Box -->
+                        <TextBox Name="txtSearch" Height="40" Padding="10" Background="#F5F5F5"
+                     materialDesign:HintAssist.Hint="Search Student..."
+                     FontSize="14" BorderBrush="#E0E0E0" Grid.Column="0" Margin="0,0,10,0"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
 
-                    <!-- Year ComboBox -->
-                    <ComboBox Name="cbYear" Height="40" Grid.Column="2" Margin="0,0,10,0"
-                              materialDesign:HintAssist.Hint="Year"
-                              ItemsSource="{Binding Years}" 
-                              SelectedItem="{Binding SelectedYear, UpdateSourceTrigger=PropertyChanged}"/>
+                        <!-- Semester ComboBox -->
+                        <ComboBox Name="cbSemester" Height="40" Grid.Column="1" Margin="0,0,10,0"
+                      materialDesign:HintAssist.Hint="Semester"
+                      ItemsSource="{Binding Semesters}" 
+                      SelectedItem="{Binding SelectedSemester, UpdateSourceTrigger=PropertyChanged}"/>
 
-                    <!-- Program ComboBox -->
-                    <ComboBox Name="cbProgram" Height="40" Grid.Column="3" Margin="0,0,10,0"
-                              materialDesign:HintAssist.Hint="Program"
-                              ItemsSource="{Binding Programs}" 
-                              SelectedItem="{Binding SelectedProgram, UpdateSourceTrigger=PropertyChanged}"/>
+                        <!-- Year ComboBox -->
+                        <ComboBox Name="cbYear" Height="40" Grid.Column="2" Margin="0,0,10,0"
+                      materialDesign:HintAssist.Hint="Year"
+                      ItemsSource="{Binding Years}" 
+                      SelectedItem="{Binding SelectedYear, UpdateSourceTrigger=PropertyChanged}"/>
 
-                    <!-- Buttons -->
-                    <!-- Top Panel Buttons -->
-                    <StackPanel Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <!-- Add Subject Button -->
-                        <Button Content="Add Subject" Height="40" Padding="10,0" Background="#007BFF"
-            Foreground="White" FontSize="14" FontWeight="SemiBold" 
-            BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
-            materialDesign:ButtonAssist.CornerRadius="8"
-            Command="{Binding AddSubjectCommand}" Margin="0,0,10,0"/>
+                        <!-- Program ComboBox -->
+                        <ComboBox Name="cbProgram" Height="40" Grid.Column="3" Margin="0,0,10,0"
+                      materialDesign:HintAssist.Hint="Program"
+                      ItemsSource="{Binding Programs}" 
+                      SelectedItem="{Binding SelectedProgram, UpdateSourceTrigger=PropertyChanged}"/>
 
-                        <!-- Upload Grades Button -->
-                        <Button Content="Upload Grades" Height="40" Padding="10,0" Background="#28A745"
-            Foreground="White" FontSize="14" FontWeight="SemiBold" 
-            BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
-            materialDesign:ButtonAssist.CornerRadius="8"
-            Command="{Binding UploadFileCommand}" Margin="0,0,10,0"/>
+                        <!-- Buttons -->
+                        <StackPanel Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Right">
+                            <!-- Add Subject Button -->
+                            <Button Content="Add Subject" Height="40" Padding="10,0" Background="#007BFF"
+                        Foreground="White" FontSize="14" FontWeight="SemiBold" 
+                        BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
+                        materialDesign:ButtonAssist.CornerRadius="8"
+                        Command="{Binding AddSubjectCommand}" Margin="0,0,10,0"/>
 
-                        <!-- Input Grade Button -->
-                        <Button Content="Input Grade" Height="40" Padding="10,0" Background="#28A745"
-            Foreground="White" FontSize="14" FontWeight="SemiBold" 
-            BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
-            materialDesign:ButtonAssist.CornerRadius="8"
-            Command="{Binding EnterGradeCommand}" Margin="0,0,10,0"/>
-                    </StackPanel>
+                            <!-- Upload Grades Button -->
+                            <Button Content="Upload Grades" Height="40" Padding="10,0" Background="#28A745"
+                        Foreground="White" FontSize="14" FontWeight="SemiBold" 
+                        BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
+                        materialDesign:ButtonAssist.CornerRadius="8"
+                        Command="{Binding UploadFileCommand}" Margin="0,0,10,0"/>
+
+                            <!-- Input Grade Button -->
+                            <Button Content="Input Grade" Height="40" Padding="10,0" Background="#28A745"
+                        Foreground="White" FontSize="14" FontWeight="SemiBold" 
+                        BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
+                        materialDesign:ButtonAssist.CornerRadius="8"
+                        Command="{Binding EnterGradeCommand}" Margin="0,0,10,0"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Second row with checkbox -->
+                    <CheckBox Name="chkCompletionOnly" Grid.Row="1" Margin="0,10,0,0" 
+                  Content="Show only grades eligible for completion" 
+                  IsChecked="{Binding ShowCompletionEligibleOnly, UpdateSourceTrigger=PropertyChanged}"/>
                 </Grid>
             </Border>
 
@@ -159,21 +171,33 @@
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                         <!-- Add Completion Grade Button (Visible only if eligible) -->
                                         <Button
-                                            Style="{StaticResource gridEditButton}"
-                                            Command="{Binding DataContext.AddCompletionGradeCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                            CommandParameter="{Binding}"
-                                            Visibility="{Binding CompletionEligible, Converter={StaticResource BoolToVisibilityConverter}}"
-                                            Margin="5">
+                    Style="{StaticResource gridEditButton}"
+                    Command="{Binding DataContext.AddCompletionGradeCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                    CommandParameter="{Binding}"
+                    Visibility="{Binding CompletionEligible, Converter={StaticResource BoolToVisibilityConverter}}"
+                    Margin="5">
                                             <StackPanel Orientation="Horizontal">
                                                 <materialDesign:PackIcon Kind="NotePlus" Margin="0,0,5,0"/>
                                             </StackPanel>
                                         </Button>
 
+                                        <!-- Edit Completion Grade Button (Visible only if completion exam exists) -->
+                                        <Button
+                    Style="{StaticResource gridEditButton}"
+                    Command="{Binding DataContext.EditCompletionGradeCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                    CommandParameter="{Binding}"
+                    Visibility="{Binding HasCompletionExam, Converter={StaticResource BoolToVisibilityConverter}}"
+                    Margin="5">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="NoteEdit" Margin="0,0,5,0"/>
+                                            </StackPanel>
+                                        </Button>
+
                                         <!-- Existing Delete Button -->
                                         <Button Style="{StaticResource gridRemoveButton}" 
-                        Command="{Binding DataContext.DeleteGradeCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                        CommandParameter="{Binding}" 
-                        Margin="5">
+                    Command="{Binding DataContext.DeleteGradeCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                    CommandParameter="{Binding}" 
+                    Margin="5">
                                             <materialDesign:PackIcon Kind="Delete"/>
                                         </Button>
                                     </StackPanel>

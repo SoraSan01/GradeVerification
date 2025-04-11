@@ -344,11 +344,10 @@ namespace GradeVerification.ViewModel
                             // Load student grades
                             using (var context = new ApplicationDbContext())
                             {
-                                // In ExportGradeToPdf method, change the grade query to:
                                 var grades = context.Grade
                                     .Include(g => g.Subject)
                                     .Where(g => g.StudentId == student.Id)
-                                    .ToList();  // Remove the Select projection
+                                    .ToList();
 
                                 CreatePdfPage(document, student, grades);
                             }
@@ -380,6 +379,7 @@ namespace GradeVerification.ViewModel
             var darkGreen = XColor.FromArgb(255, 46, 125, 50);
             var mediumGreen = XColor.FromArgb(255, 56, 142, 60);
             var lightGreen = XColor.FromArgb(255, 241, 248, 233);
+            var failGradeColor = XColor.FromArgb(255, 220, 53, 69); // Red color for grades below 75
 
             var headerFont = new XFont("Arial", 16, XFontStyleEx.Bold);
             var titleFont = new XFont("Arial", 12, XFontStyleEx.Bold);
@@ -397,22 +397,19 @@ namespace GradeVerification.ViewModel
             DrawStudentInfo(gfx, page, student, mediumGreen, lightGreen);
 
             // Grades Table
-            var finalY = DrawGradeTable(gfx, page, document, grades, mediumGreen);
+            var finalY = DrawGradeTable(gfx, page, document, grades, mediumGreen, failGradeColor);
 
             // Signature Line
             DrawSignatureLine(gfx, page, finalY);
 
-            // Footer Notes
-            gfx.DrawString("This is an unofficial grade report. Please contact the registrar for official transcripts.",
-                smallFont, XBrushes.Black,
-                new XRect(20, page.Height - 50, page.Width - 40, 20),
-                XStringFormats.TopCenter);
+            // "Nothing Follows" now appears below the signature line
+            DrawNothingFollows(gfx, page, finalY + 80);
         }
 
         private void DrawStudentInfo(XGraphics gfx, PdfPage page, Student student,
                        XColor labelColor, XColor bgColor)
         {
-            var infoRect = new XRect(20, 120, page.Width - 40, 110); // Increased height
+            var infoRect = new XRect(20, 120, page.Width - 40, 110);
             gfx.DrawRectangle(new XSolidBrush(bgColor), infoRect);
 
             double y = infoRect.Top + 10;
@@ -437,14 +434,14 @@ namespace GradeVerification.ViewModel
             var normalFont = new XFont("Arial", 10);
 
             gfx.DrawString(label, boldFont, new XSolidBrush(labelColor), x, y);
-            gfx.DrawString(value, normalFont, XBrushes.Black, x + 50, y);
+            gfx.DrawString(value, normalFont, XBrushes.Black, x + 60, y); // Increased spacing between label and value
         }
 
         private double DrawGradeTable(XGraphics gfx, PdfPage page, PdfDocument document,
-              List<Grade> grades, XColor headerColor)
+              List<Grade> grades, XColor headerColor, XColor failGradeColor)
         {
             double[] columnWidths = { 100, 120, 100, 40 };
-            double y = 200;
+            double y = 240; // Increased y position to create more space after student info
             int rowHeight = 20;
             var currentPageNumber = 1;
             var headerFont = new XFont("Arial", 10, XFontStyleEx.Bold);
@@ -471,22 +468,22 @@ namespace GradeVerification.ViewModel
                 }
 
                 var grade = grades[i];
-                double x = 20;  // Declare x here
+                double x = 20;
                 var rowFont = new XFont("Arial", 9);
 
                 // Subject Code
                 gfx.DrawString(grade.Subject?.SubjectCode ?? "-", rowFont, XBrushes.Black,
-                    new XRect(x, y, columnWidths[0], rowHeight), XStringFormats.TopLeft);
+                    new XRect(x, y, columnWidths[0], rowHeight), XStringFormats.CenterLeft);
                 x += columnWidths[0];
 
                 // Schedule
                 gfx.DrawString(grade.Subject?.Schedule ?? "-", rowFont, XBrushes.Black,
-                    new XRect(x, y, columnWidths[1], rowHeight), XStringFormats.TopLeft);
+                    new XRect(x, y, columnWidths[1], rowHeight), XStringFormats.CenterLeft);
                 x += columnWidths[1];
 
                 // Professor
                 gfx.DrawString(grade.Subject?.Professor ?? "-", rowFont, XBrushes.Black,
-                    new XRect(x, y, columnWidths[2], rowHeight), XStringFormats.TopLeft);
+                    new XRect(x, y, columnWidths[2], rowHeight), XStringFormats.CenterLeft);
                 x += columnWidths[2];
 
                 // Handle completion grade
@@ -494,21 +491,23 @@ namespace GradeVerification.ViewModel
                     ? grade.CompletionGrade
                     : grade.Score ?? "-";
 
-                var gradeBrush = grade.IsGradeLow ? XBrushes.Red : XBrushes.Black;
+                // Check if grade is 74 or below for red font color
+                bool isLowGrade = false;
+                if (int.TryParse(gradeValue, out int numericGrade))
+                {
+                    isLowGrade = numericGrade <= 74;
+                }
+                else if (grade.IsGradeLow)
+                {
+                    isLowGrade = true;
+                }
+
+                var gradeBrush = isLowGrade ? new XSolidBrush(failGradeColor) : XBrushes.Black;
+
                 gfx.DrawString(gradeValue, rowFont, gradeBrush,
-                    new XRect(x, y, columnWidths[3], rowHeight), XStringFormats.TopRight);
+                    new XRect(x, y, columnWidths[3], rowHeight), XStringFormats.CenterRight);
 
                 y += rowHeight;
-
-                // Draw "Nothing Follows" after last grade
-                if (i == grades.Count - 1)
-                {
-                    y += 5;
-                    gfx.DrawString("- NOTHING FOLLOWS -", new XFont("Arial", 8),
-                        XBrushes.DarkGray, new XRect(20, y, page.Width - 40, 10),
-                        XStringFormats.TopCenter);
-                    y += 15;
-                }
             }
 
             return y;
@@ -521,9 +520,9 @@ namespace GradeVerification.ViewModel
 
             for (int j = 0; j < headers.Length; j++)
             {
+                var format = j == headers.Length - 1 ? XStringFormats.CenterRight : XStringFormats.CenterLeft;
                 gfx.DrawString(headers[j], headerFont, new XSolidBrush(headerColor),
-                    new XRect(x, y, columnWidths[j], 20),
-                    XStringFormats.TopLeft);
+                    new XRect(x, y, columnWidths[j], 20), format);
                 x += columnWidths[j];
             }
 
@@ -534,7 +533,7 @@ namespace GradeVerification.ViewModel
 
         private void DrawSignatureLine(XGraphics gfx, PdfPage page, double yPosition)
         {
-            yPosition += 20;
+            yPosition += 30; // Increased space before signature line
             gfx.DrawLine(new XPen(XColors.Black, 0.5),
                 page.Width / 2 - 75, yPosition,
                 page.Width / 2 + 75, yPosition);
@@ -543,31 +542,51 @@ namespace GradeVerification.ViewModel
                 new XRect(page.Width / 2 - 75, yPosition + 5, 150, 15),
                 XStringFormats.TopCenter);
         }
+
+        private void DrawNothingFollows(XGraphics gfx, PdfPage page, double yPosition)
+        {
+            // Draw a clear box for proper centering
+            var boxWidth = page.Width - 40;
+            var boxHeight = 20;
+            var boxX = 20;
+
+            // Position the text in the center of the box with proper alignment formatting
+            gfx.DrawString("- NOTHING FOLLOWS -",
+                          new XFont("Arial", 8),
+                          XBrushes.DarkGray,
+                          new XRect(boxX, yPosition, boxWidth, boxHeight),
+                          XStringFormats.Center); // Using Center alignment for proper positioning
+        }
+
         private void DrawUniversityHeader(XGraphics gfx, PdfPage page, PdfDocument document)
         {
             var darkGreen = XColor.FromArgb(255, 46, 125, 50);
             var logo = XImage.FromFile("C:\\Users\\admin\\source\\repos\\GradeVerification\\GradeVerification\\Resources\\umlogo.png");
 
             // Header background
-            gfx.DrawRectangle(new XSolidBrush(darkGreen), 0, 0, page.Width, 80); // Increased height
+            gfx.DrawRectangle(new XSolidBrush(darkGreen), 0, 0, page.Width, 80);
 
             // Logo
             gfx.DrawImage(logo, new XRect(10, 10, 60, 60));
 
-            // University Info
+            // University name
             gfx.DrawString("University of Manila",
                 new XFont("Arial", 14, XFontStyleEx.Bold),
                 XBrushes.White,
                 new XRect(80, 15, page.Width - 90, 20),
                 XStringFormats.TopLeft);
 
-            gfx.DrawString("546 Mariano V. delos Santos Street, Sampaloc Manila\n" +
-                           "Philippines 1008 | Tel: 8735-5085\n" +
-                           "Email: umnla.edu.ph@gmail.com | Website: http://www.um.edu.ph",
-                new XFont("Arial", 8),
-                XBrushes.White,
-                new XRect(80, 35, page.Width - 90, 40),
-                XStringFormats.TopLeft);
+            // Create multi-line string for better control over address line positioning
+            var addressLine1 = "546 Mariano V. delos Santos Street, Sampaloc Manila";
+            var addressLine2 = "Philippines 1008 | Tel: 8735-5085";
+            var addressLine3 = "Email: umnla.edu.ph@gmail.com | Website: http://www.um.edu.ph";
+
+            var addressFont = new XFont("Arial", 8);
+
+            // Draw each line individually with proper spacing
+            gfx.DrawString(addressLine1, addressFont, XBrushes.White, new XRect(80, 35, page.Width - 90, 12), XStringFormats.TopLeft);
+            gfx.DrawString(addressLine2, addressFont, XBrushes.White, new XRect(80, 47, page.Width - 90, 12), XStringFormats.TopLeft);
+            gfx.DrawString(addressLine3, addressFont, XBrushes.White, new XRect(80, 59, page.Width - 90, 12), XStringFormats.TopLeft);
         }
         private void UploadWindow(object parameter)
         {

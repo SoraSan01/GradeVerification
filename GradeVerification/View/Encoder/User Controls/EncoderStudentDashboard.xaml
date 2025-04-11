@@ -18,55 +18,80 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- Top Panel -->
+            <!-- Top Panel - Now includes the checkbox -->
             <Border Background="White" CornerRadius="10" Margin="20" Padding="15"
-                 materialDesign:ElevationAssist.Elevation="Dp3">
+                materialDesign:ElevationAssist.Elevation="Dp3">
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="2*"/>
-                        <ColumnDefinition Width="1.2*"/>
-                        <ColumnDefinition Width="1.2*"/>
-                        <ColumnDefinition Width="1.2*"/>
-                        <ColumnDefinition Width="1.5*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                    <TextBox Name="txtSearch" Height="40" Padding="10" Background="#F5F5F5"
-                          materialDesign:HintAssist.Hint="Search Student..."
-                          FontSize="14" BorderBrush="#E0E0E0" Grid.Column="0" Margin="0,0,10,0"
-                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+                    <!-- Search and filters row -->
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="1.2*"/>
+                            <ColumnDefinition Width="1.2*"/>
+                            <ColumnDefinition Width="1.2*"/>
+                            <ColumnDefinition Width="1.5*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-                    <ComboBox Name="cbSemester" Height="40" Grid.Column="1" Margin="0,0,10,0"
-                           materialDesign:HintAssist.Hint="Semester"
-                           ItemsSource="{Binding Semesters}" 
-                           SelectedItem="{Binding SelectedSemester, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBox Name="txtSearch" Height="40" Padding="10" Background="#F5F5F5"
+                             materialDesign:HintAssist.Hint="Search Student..."
+                             FontSize="14" BorderBrush="#E0E0E0" Grid.Column="0" Margin="0,0,10,0"
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
 
-                    <ComboBox Name="cbYear" Height="40" Grid.Column="2" Margin="0,0,10,0"
-                           materialDesign:HintAssist.Hint="Year"
-                           ItemsSource="{Binding Years}" 
-                           SelectedItem="{Binding SelectedYear, UpdateSourceTrigger=PropertyChanged}"/>
+                        <ComboBox Name="cbSemester" Height="40" Grid.Column="1" Margin="0,0,10,0"
+                              materialDesign:HintAssist.Hint="Semester"
+                              ItemsSource="{Binding Semesters}" 
+                              SelectedItem="{Binding SelectedSemester, UpdateSourceTrigger=PropertyChanged}"/>
 
-                    <ComboBox Name="cbSchoolYear" Height="40" Grid.Column="3" Margin="0,0,10,0"
-                           materialDesign:HintAssist.Hint="School Year"
-                           ItemsSource="{Binding SchoolYears}" 
-                           SelectedItem="{Binding SelectedSchoolYear, UpdateSourceTrigger=PropertyChanged}"/>
+                        <ComboBox Name="cbYear" Height="40" Grid.Column="2" Margin="0,0,10,0"
+                              materialDesign:HintAssist.Hint="Year"
+                              ItemsSource="{Binding Years}" 
+                              SelectedItem="{Binding SelectedYear, UpdateSourceTrigger=PropertyChanged}"/>
 
-                    <ComboBox Name="cbProgram" Height="40" Grid.Column="4" Margin="0,0,10,0"
-                           materialDesign:HintAssist.Hint="Program"
-                           ItemsSource="{Binding Programs}" 
-                           SelectedItem="{Binding SelectedProgram, UpdateSourceTrigger=PropertyChanged}"/>
+                        <ComboBox Name="cbSchoolYear" Height="40" Grid.Column="3" Margin="0,0,10,0"
+                              materialDesign:HintAssist.Hint="School Year"
+                              ItemsSource="{Binding SchoolYears}" 
+                              SelectedItem="{Binding SelectedSchoolYear, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <ComboBox Name="cbProgram" Height="40" Grid.Column="4" Margin="0,0,10,0"
+                              materialDesign:HintAssist.Hint="Program"
+                              ItemsSource="{Binding Programs}" 
+                              SelectedItem="{Binding SelectedProgram, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <Button Content="Upload Student" Height="40" Padding="20,0" Background="#28A745"
+                            Foreground="White" FontSize="14" FontWeight="SemiBold" 
+                            BorderBrush="Transparent" BorderThickness="0" Cursor="Hand"
+                            Margin="10,0,0,0"
+                            Command="{Binding UploadStudentCommand}" Grid.Column="6"/>
+
+                        <Button Cursor="Hand" Margin="10 0 0 0" Content="Export" FontSize="14"
+                            Padding="20,0" BorderBrush="Transparent" BorderThickness="0"
+                            Background="#28A745" Foreground="White" Grid.Column="7"
+                            Height="40"
+                            Command="{Binding ExportGradeCommand}"
+                            CommandParameter="{Binding SelectedItem, ElementName=dgStudents}"
+                            Visibility="{Binding IsDeleted, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=reverse}">
+                        </Button>
+                    </Grid>
                 </Grid>
             </Border>
+
             <!-- Student Data Table -->
             <Border Grid.Row="1" Background="White" CornerRadius="10" Margin="20" Padding="0">
                 <Grid>
                     <DataGrid Name="dgStudents" ItemsSource="{Binding Students}" 
-                           Style="{StaticResource DataGridStyle1}"
-                           RowStyle="{DynamicResource DataGridRowStyle1}"
-                           ColumnHeaderStyle="{DynamicResource DataGridColumnHeaderStyle1}"
-                           CellStyle="{DynamicResource DataGridCellStyle1}"
-                           AutoGenerateColumns="False">
+                          Style="{StaticResource DataGridStyle1}"
+                          RowStyle="{DynamicResource DataGridRowStyle1}"
+                          ColumnHeaderStyle="{DynamicResource DataGridColumnHeaderStyle1}"
+                          CellStyle="{DynamicResource DataGridCellStyle1}"
+                          AutoGenerateColumns="False">
                         <DataGrid.Columns>
                             <DataGridTemplateColumn Header="ID" Width="100">
                                 <DataGridTemplateColumn.CellTemplate>
@@ -133,13 +158,15 @@
                             <DataGridTemplateColumn Header="Actions" Width="180">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <!-- Show Grade Button -->
                                             <Button Style="{StaticResource GradeEntryButton}" Cursor="Hand" 
-                                                 Command="{Binding DataContext.ShowGradeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                                 CommandParameter="{Binding}">
+                    Command="{Binding DataContext.ShowGradeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                    CommandParameter="{Binding}"
+                    Visibility="{Binding IsDeleted, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=reverse}">
                                                 <materialDesign:PackIcon Kind="Eye"/>
                                             </Button>
+
                                         </StackPanel>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
@@ -149,7 +176,7 @@
 
                     <!-- No Students Found Message -->
                     <TextBlock Text="No students found." FontSize="16" FontWeight="Bold" Foreground="Gray" 
-                            HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed">
+                           HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
                                 <Style.Triggers>

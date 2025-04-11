@@ -4,12 +4,16 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GradeVerification.Converters"
         mc:Ignorable="d" 
         WindowStyle="None" 
         WindowStartupLocation="CenterScreen"
         AllowsTransparency="True" 
         Background="Transparent"
         Title="CompletionGradeDialog" Height="500" Width="750">
+    <Window.Resources>
+        <local:BooleanToStringConverter x:Key="BooleanToStringConverter"/>
+    </Window.Resources>
 
     <Border CornerRadius="5" Background="#ffffff" MouseDown="Border_MouseDown">
         <Grid>
@@ -23,8 +27,10 @@
             </Grid.RowDefinitions>
 
             <!-- Header -->
-            <TextBlock Text="Completion Grade" HorizontalAlignment="Left" VerticalAlignment="Center"
-                       Margin="55,0,0,0" FontSize="16" FontWeight="SemiBold" Foreground="#4880ff"/>
+            <TextBlock Text="{Binding IsEditMode, Converter={StaticResource BooleanToStringConverter}, 
+           ConverterParameter='Edit Completion Grade|Add Completion Grade'}" 
+           HorizontalAlignment="Left" VerticalAlignment="Center"
+           Margin="55,0,0,0" FontSize="16" FontWeight="SemiBold" Foreground="#4880ff"/>
             <materialDesign:PackIcon Kind="ClipboardEdit" Margin="30,10,0,0" Width="20" Height="20" Foreground="#4880ff"/>
 
             <!-- Top Menu -->

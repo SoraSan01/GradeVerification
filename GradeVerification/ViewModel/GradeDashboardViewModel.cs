@@ -37,6 +37,7 @@ namespace GradeVerification.ViewModel
         private string _selectedProgram;
         private bool _isLoading;
         private Grade _selectedGrade;
+        private bool _showCompletionEligibleOnly;
 
         private ObservableCollection<Grade> _grades = new ObservableCollection<Grade>();
         private ObservableCollection<string> _semesters = new ObservableCollection<string>();
@@ -151,6 +152,20 @@ namespace GradeVerification.ViewModel
             }
         }
 
+        public bool ShowCompletionEligibleOnly
+        {
+            get => _showCompletionEligibleOnly;
+            set
+            {
+                if (_showCompletionEligibleOnly != value)
+                {
+                    _showCompletionEligibleOnly = value;
+                    OnPropertyChanged();
+                    _ = FilterGradesAsync();
+                }
+            }
+        }
+
         #endregion
 
         #region Commands
@@ -161,6 +176,7 @@ namespace GradeVerification.ViewModel
         public ICommand AddSubjectCommand { get; }
         public ICommand EnterGradeCommand { get; }
         public ICommand AddCompletionGradeCommand { get; set; }
+        public ICommand EditCompletionGradeCommand { get; set; }
         #endregion
 
         #region Constructor
@@ -189,6 +205,7 @@ namespace GradeVerification.ViewModel
             AddSubjectCommand = new RelayCommand(AddSubject);
             EnterGradeCommand = new RelayCommand(EnterGrade);
             AddCompletionGradeCommand = new RelayCommand(AddCompletionGrade, CanAddCompletionGrade);
+            EditCompletionGradeCommand = new RelayCommand(EditCompletionGrade, CanEditCompletionGrade);
 
             // Load initial data.
             _ = LoadFilterOptionsAsync();
@@ -267,9 +284,9 @@ namespace GradeVerification.ViewModel
                 {
                     var query = context.Grade
                     .Include(g => g.Student)
-                    .ThenInclude(s => s.AcademicProgram) // Add this
+                    .ThenInclude(s => s.AcademicProgram)
                     .Include(g => g.Subject)
-                    .AsNoTracking() // Add this
+                    .AsNoTracking()
                     .AsQueryable();
 
                     if (!string.IsNullOrWhiteSpace(SearchText))
@@ -288,6 +305,10 @@ namespace GradeVerification.ViewModel
 
                     if (!string.IsNullOrWhiteSpace(SelectedProgram))
                         query = query.Where(g => g.Student.AcademicProgram.ProgramCode.ToLower() == SelectedProgram.ToLower());
+
+                    // Add filter for completion eligible grades
+                    if (ShowCompletionEligibleOnly)
+                        query = query.Where(g => g.CompletionEligible || g.HasCompletionExam);
 
                     var filteredGrades = await query.ToListAsync();
 
@@ -378,6 +399,51 @@ namespace GradeVerification.ViewModel
                                   "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
+        }
+
+        private void EditCompletionGrade(object parameter)
+        {
+            if (parameter is Grade selectedGrade)
+            {
+                try
+                {
+                    using (var context = new ApplicationDbContext())
+                    {
+                        // Load the completion exam for this grade
+                        var completionExam = context.CompletionExams
+                            .FirstOrDefault(ce => ce.GradeId == selectedGrade.GradeId);
+
+                        if (completionExam != null)
+                        {
+                            var dialog = new CompletionGradeDialog();
+                            var vm = new CompletionGradeDialogViewModel(selectedGrade, completionExam);
+                            dialog.DataContext = vm;
+
+                            if (dialog.ShowDialog() == true)
+                            {
+                                _notifier.ShowSuccess("Completion grade updated successfully");
+                                _ = LoadGradesAsync(); // Refresh the list
+                            }
+                        }
+                        else
+                        {
+                            MessageBox.Show("Could not find completion exam details for this grade.",
+                                "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error editing completion grade: {ex.Message}",
+                                  "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private bool CanEditCompletionGrade(object parameter)
+        {
+            var grade = parameter as Grade;
+            return grade != null && grade.HasCompletionExam;
         }
 
         private bool CanAddCompletionGrade(object parameter)

@@ -131,11 +131,6 @@
 
                 <!-- Footer Buttons -->
                 <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0">
-                    <Button x:Name="PrintButton" Content="Print" Width="100" Height="40"
-                  Command="{Binding PrintCommand}" 
-                  CommandParameter="{Binding ElementName=MainGrid}"
-                  Style="{StaticResource MaterialDesignRaisedButton}"
-                  Margin="0,0,10,0"/>
                     <Button x:Name="CloseButton" Content="Close" Width="100" Height="40"
                   Command="{Binding CloseCommand}" 
                   Style="{StaticResource MaterialDesignRaisedButton}"/>
